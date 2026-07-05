@@ -5,8 +5,17 @@ import '../../../authentication/presentation/bloc/auth_bloc.dart';
 
 class WelcomeBanner extends StatelessWidget {
   final Map<String, dynamic> stats;
+  final VoidCallback onNewCategory;
+  final VoidCallback onUploadMedia;
+  final VoidCallback onAddRecipe;
 
-  const WelcomeBanner({super.key, required this.stats});
+  const WelcomeBanner({
+    super.key,
+    required this.stats,
+    required this.onNewCategory,
+    required this.onUploadMedia,
+    required this.onAddRecipe,
+  });
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -130,21 +139,21 @@ class WelcomeBanner extends StatelessWidget {
                   _ActionButton(
                     icon: Icons.grid_view_rounded,
                     label: 'New Category',
-                    onTap: () {},
+                    onTap: onNewCategory,
                     primary: false,
                   ),
                   const SizedBox(height: 10),
                   _ActionButton(
                     icon: Icons.upload_rounded,
                     label: 'Upload Media',
-                    onTap: () {},
+                    onTap: onUploadMedia,
                     primary: false,
                   ),
                   const SizedBox(height: 10),
                   _ActionButton(
                     icon: Icons.add_rounded,
                     label: 'Add Recipe',
-                    onTap: () {},
+                    onTap: onAddRecipe,
                     primary: true,
                   ),
                 ],

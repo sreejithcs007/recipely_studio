@@ -16,7 +16,8 @@ import '../../domain/entities/category.dart';
 import '../bloc/category_bloc.dart';
 
 class CategoriesPage extends StatefulWidget {
-  const CategoriesPage({super.key});
+  final bool openNew;
+  const CategoriesPage({super.key, this.openNew = false});
 
   @override
   State<CategoriesPage> createState() => _CategoriesPageState();
@@ -42,6 +43,11 @@ class _CategoriesPageState extends State<CategoriesPage> {
   void initState() {
     super.initState();
     context.read<CategoryBloc>().add(LoadCategories());
+    if (widget.openNew) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showCategoryDialog();
+      });
+    }
   }
 
   @override

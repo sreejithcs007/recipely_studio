@@ -101,7 +101,10 @@ class AppRouter {
           ),
           GoRoute(
             path: '/categories',
-            builder: (context, state) => const CategoriesPage(),
+            builder: (context, state) {
+              final action = state.uri.queryParameters['action'];
+              return CategoriesPage(openNew: action == 'new');
+            },
           ),
           GoRoute(
             path: '/tags',

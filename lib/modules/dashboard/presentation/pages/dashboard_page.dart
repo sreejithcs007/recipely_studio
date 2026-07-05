@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:get_it/get_it.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../shared/widgets/error_states/error_state.dart';
 import '../../../../shared/widgets/loading/shimmers.dart';
 import '../../../../shared/widgets/recent_recipes.dart';
+import '../../../../core/services/file_upload_service.dart';
+import '../../../../core/services/snackbar_service.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../widgets/welcome_banner.dart';
 import '../widgets/dashboard_charts.dart';
@@ -51,7 +57,12 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── 1. Welcome Banner ─────────────────────────────────────
-                  WelcomeBanner(stats: stats),
+                  WelcomeBanner(
+                    stats: stats,
+                    onNewCategory: () => context.go('/categories?action=new'),
+                    onAddRecipe: () => context.go('/recipes/new'),
+                    onUploadMedia: () => _showUploadMediaDialog(context),
+                  ),
                   const SizedBox(height: 24),
 
                   // ── 2. Stats Cards Row (6 cards) ──────────────────────────
@@ -135,6 +146,13 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showUploadMediaDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => const _UploadMediaDialog(),
     );
   }
 }
@@ -352,6 +370,195 @@ class _Card extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: child,
+    );
+  }
+}
+
+// ── Upload Media Dialog Widget ───────────────────────────────────────────────
+class _UploadMediaDialog extends StatefulWidget {
+  const _UploadMediaDialog();
+
+  @override
+  State<_UploadMediaDialog> createState() => _UploadMediaDialogState();
+}
+
+class _UploadMediaDialogState extends State<_UploadMediaDialog> {
+  final TextEditingController _urlController = TextEditingController();
+  bool _isUploading = false;
+  String? _fileName;
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickAndUpload() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.first.bytes != null) {
+      final file = result.files.first;
+      setState(() {
+        _isUploading = true;
+        _fileName = file.name;
+        _urlController.clear();
+      });
+
+      try {
+        final url = await GetIt.I<FileUploadService>().uploadFile(
+          bucket: 'recipe-images',
+          fileName: 'media_${DateTime.now().millisecondsSinceEpoch}_${file.name}',
+          fileBytes: file.bytes!,
+        );
+        setState(() {
+          _urlController.text = url;
+          _isUploading = false;
+        });
+        GetIt.I<SnackbarService>().showSuccess('File uploaded successfully!');
+      } catch (e) {
+        setState(() => _isUploading = false);
+        GetIt.I<SnackbarService>().showError('Upload failed: $e');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        'Upload Media',
+        style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
+      ),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Select an image to upload to Supabase storage. You can copy the generated URL to use in your recipes or categories.',
+              style: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF6C757D), height: 1.4),
+            ),
+            const SizedBox(height: 20),
+            if (_isUploading) ...[
+              Center(
+                child: Column(
+                  children: [
+                    const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Uploading ${_fileName ?? ''}...',
+                      style: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF8E8E8E)),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Center(
+                child: OutlineButton(
+                  onPressed: _pickAndUpload,
+                  icon: Icons.image_rounded,
+                  label: _urlController.text.isNotEmpty ? 'Select Another Image' : 'Choose Image File',
+                ),
+              ),
+            ],
+            if (_urlController.text.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text(
+                'Generated Public URL',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF4E4E4E)),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 38,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F6F8),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      alignment: Alignment.centerLeft,
+                      child: SelectableText(
+                        _urlController.text,
+                        maxLines: 1,
+                        style: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF0F0F0F)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: _urlController.text));
+                      GetIt.I<SnackbarService>().showSuccess('URL copied to clipboard!');
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      height: 38,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Copy',
+                        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Close', style: GoogleFonts.inter()),
+        ),
+      ],
+    );
+  }
+}
+
+class OutlineButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String label;
+
+  const OutlineButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16),
+      label: Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF4E4E4E),
+        side: const BorderSide(color: Color(0xFFDEE2E6)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
     );
   }
 }
