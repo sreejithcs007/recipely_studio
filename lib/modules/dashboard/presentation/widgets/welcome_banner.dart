@@ -6,14 +6,12 @@ import '../../../authentication/presentation/bloc/auth_bloc.dart';
 class WelcomeBanner extends StatelessWidget {
   final Map<String, dynamic> stats;
   final VoidCallback onNewCategory;
-  final VoidCallback onUploadMedia;
   final VoidCallback onAddRecipe;
 
   const WelcomeBanner({
     super.key,
     required this.stats,
     required this.onNewCategory,
-    required this.onUploadMedia,
     required this.onAddRecipe,
   });
 
@@ -140,13 +138,6 @@ class WelcomeBanner extends StatelessWidget {
                     icon: Icons.grid_view_rounded,
                     label: 'New Category',
                     onTap: onNewCategory,
-                    primary: false,
-                  ),
-                  const SizedBox(height: 10),
-                  _ActionButton(
-                    icon: Icons.upload_rounded,
-                    label: 'Upload Media',
-                    onTap: onUploadMedia,
                     primary: false,
                   ),
                   const SizedBox(height: 10),
