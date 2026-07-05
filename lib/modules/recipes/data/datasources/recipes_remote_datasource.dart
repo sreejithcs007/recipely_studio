@@ -127,11 +127,13 @@ class RecipesRemoteDataSource {
 
     // Insert steps
     if (recipe.steps.isNotEmpty) {
-      final stepsData = recipe.steps.map((step) {
+      final stepsData = recipe.steps.asMap().entries.map((entry) {
+        final index = entry.key;
+        final step = entry.value;
         return {
           'recipe_id': recipeId,
           'step_content': step.content,
-          'step_number': step.stepNumber,
+          'step_number': index + 1,
         };
       }).toList();
       await _supabaseClient.from('recipe_steps').insert(stepsData);

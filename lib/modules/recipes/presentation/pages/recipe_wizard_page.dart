@@ -64,6 +64,8 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
 
   // Step 6 Publish status toggle
   String _publishStatus = 'published';
+  bool _isFeatured = false;
+  bool _isTrending = false;
 
   @override
   void initState() {
@@ -116,6 +118,8 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
         _selectedDifficulty = recipe.difficulty;
         _selectedSpiceLevel = recipe.spiceLevel;
         _publishStatus = recipe.status;
+        _isFeatured = recipe.isFeatured;
+        _isTrending = recipe.isTrending;
 
         // Pre-select category and tag junctions
         // Note: For existing recipes, our data source joined and mapped junction names.
@@ -212,8 +216,8 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
       spiceLevel: _selectedSpiceLevel,
       estimatedCost: cost,
       status: _publishStatus,
-      isFeatured: _existingRecipe?.isFeatured ?? false,
-      isTrending: _existingRecipe?.isTrending ?? false,
+      isFeatured: _isFeatured,
+      isTrending: _isTrending,
       isRecommended: _existingRecipe?.isRecommended ?? false,
       imageUrl: imageState.imageUrl,
       createdAt: _existingRecipe?.createdAt ?? DateTime.now(),
@@ -958,6 +962,34 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
               },
             ),
             Text('SAVE AS DRAFT', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+          ],
+        ),
+        const Divider(height: 40),
+        // Shelves selection
+        Text(
+          'Shelves Promotion',
+          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Checkbox(
+              value: _isFeatured,
+              onChanged: (val) {
+                if (val != null) setState(() => _isFeatured = val);
+              },
+              activeColor: Theme.of(context).primaryColor,
+            ),
+            Text('PROMOTE TO FEATURED SHELF', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+            const SizedBox(width: 32),
+            Checkbox(
+              value: _isTrending,
+              onChanged: (val) {
+                if (val != null) setState(() => _isTrending = val);
+              },
+              activeColor: Theme.of(context).primaryColor,
+            ),
+            Text('PROMOTE TO TRENDING SHELF', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
           ],
         ),
         const SizedBox(height: 24),
