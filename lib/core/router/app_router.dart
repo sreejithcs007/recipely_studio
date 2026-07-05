@@ -15,6 +15,7 @@ import '../../../modules/categories/presentation/pages/categories_page.dart';
 import '../../../modules/tags/presentation/pages/tags_page.dart';
 import '../../../modules/users/presentation/pages/users_page.dart';
 import '../../../modules/settings/presentation/pages/settings_page.dart';
+import '../../../modules/recipes/presentation/pages/featured_page.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> parentNavigatorKey =
@@ -83,6 +84,18 @@ class AppRouter {
                 },
               ),
             ],
+          ),
+          GoRoute(
+            path: '/featured',
+            builder: (context, state) => const FeaturedPage(),
+          ),
+          GoRoute(
+            path: '/trending',
+            builder: (context, state) => const FeaturedPage(),
+          ),
+          GoRoute(
+            path: '/analytics',
+            builder: (context, state) => const DashboardPage(),
           ),
           GoRoute(
             path: '/categories',
