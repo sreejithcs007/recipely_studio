@@ -440,9 +440,9 @@ class _TableHeader extends StatelessWidget {
           const Expanded(flex: 2, child: Text('COOK TIME', style: labelStyle)),
           const Expanded(flex: 2, child: Text('RATING', style: labelStyle)),
           const Expanded(flex: 2, child: Text('STATUS', style: labelStyle)),
-          const SizedBox(width: 36, child: Text('FEAT.', style: labelStyle)),
-          const SizedBox(width: 42, child: Text('TREND.', style: labelStyle)),
-          const SizedBox(width: 72, child: Text('ACTIONS', style: labelStyle)),
+          const SizedBox(width: 56, child: Text('FEAT.', style: labelStyle)),
+          const SizedBox(width: 64, child: Text('TREND.', style: labelStyle)),
+          const SizedBox(width: 80, child: Text('ACTIONS', style: labelStyle)),
         ],
       ),
     );
@@ -587,7 +587,7 @@ class _RecipeRowState extends State<_RecipeRow> {
             ),
             // Featured star
             SizedBox(
-              width: 36,
+              width: 56,
               child: Icon(
                 r.isFeatured ? Icons.star_rounded : Icons.star_outline_rounded,
                 size: 18,
@@ -596,7 +596,7 @@ class _RecipeRowState extends State<_RecipeRow> {
             ),
             // Trending fire
             SizedBox(
-              width: 42,
+              width: 64,
               child: Icon(
                 Icons.local_fire_department_rounded,
                 size: 18,
@@ -605,7 +605,7 @@ class _RecipeRowState extends State<_RecipeRow> {
             ),
             // Action buttons
             SizedBox(
-              width: 72,
+              width: 80,
               child: Row(
                 children: [
                   _ActionIcon(
