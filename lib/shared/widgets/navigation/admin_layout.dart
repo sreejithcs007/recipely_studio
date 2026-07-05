@@ -14,8 +14,6 @@ class AdminLayout extends StatefulWidget {
 }
 
 class _AdminLayoutState extends State<AdminLayout> {
-  bool _isSidebarCollapsed = false;
-
   void _onNavigate(String path) {
     context.go(path);
   }
@@ -44,125 +42,222 @@ class _AdminLayoutState extends State<AdminLayout> {
         body: Row(
           children: [
             // ── Sidebar Navigation ──────────────────────────────────────────
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: _isSidebarCollapsed ? 72 : 240,
+            Container(
+              width: 220,
               decoration: BoxDecoration(
                 color: sidebarBg,
                 border: Border(right: BorderSide(color: borderColor, width: 1)),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Sidebar Header (Logo)
-                  Container(
-                    height: 64,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(color: borderColor, width: 1)),
-                    ),
+                  // ── Logo Header ──────────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
                     child: Row(
-                      mainAxisAlignment: _isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.restaurant_menu,
-                          color: Theme.of(context).primaryColor,
-                          size: 26,
-                        ),
-                        if (!_isSidebarCollapsed) ...[
-                          const SizedBox(width: 12),
-                          Text(
-                            'Recipely Studio',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: textColor,
-                              letterSpacing: -0.5,
-                            ),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ]
+                          child: const Icon(
+                            Icons.restaurant_menu_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Recipely',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: textColor,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            Text(
+                              'Studio · Admin',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w400,
+                                color: isDark
+                                    ? const Color(0xFF8E8E8E)
+                                    : const Color(0xFF8E8E8E),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                  // Sidebar Items List
+
+                  // ── Navigation List ──────────────────────────────────────
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       children: [
+                        _buildSectionLabel('OVERVIEW', isDark),
                         _buildNavItem(
-                          icon: Icons.dashboard_outlined,
-                          activeIcon: Icons.dashboard,
+                          icon: Icons.grid_view_rounded,
                           label: 'Dashboard',
                           path: '/dashboard',
                           currentRoute: currentRoute,
+                          isDark: isDark,
                         ),
                         _buildNavItem(
-                          icon: Icons.restaurant_outlined,
-                          activeIcon: Icons.restaurant,
+                          icon: Icons.soup_kitchen_outlined,
                           label: 'Recipes',
                           path: '/recipes',
                           currentRoute: currentRoute,
+                          isDark: isDark,
                         ),
                         _buildNavItem(
-                          icon: Icons.category_outlined,
-                          activeIcon: Icons.category,
+                          icon: Icons.star_border_rounded,
+                          label: 'Featured',
+                          path: '/featured',
+                          currentRoute: currentRoute,
+                          isDark: isDark,
+                        ),
+                        _buildNavItem(
+                          icon: Icons.local_fire_department_outlined,
+                          label: 'Trending',
+                          path: '/trending',
+                          currentRoute: currentRoute,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(height: 8),
+                        _buildSectionLabel('LIBRARY', isDark),
+                        _buildNavItem(
+                          icon: Icons.grid_3x3_outlined,
                           label: 'Categories',
                           path: '/categories',
                           currentRoute: currentRoute,
+                          isDark: isDark,
                         ),
                         _buildNavItem(
-                          icon: Icons.label_outline,
-                          activeIcon: Icons.label,
+                          icon: Icons.label_outline_rounded,
                           label: 'Tags',
                           path: '/tags',
                           currentRoute: currentRoute,
+                          isDark: isDark,
                         ),
+                        const SizedBox(height: 8),
+                        _buildSectionLabel('PLATFORM', isDark),
                         _buildNavItem(
-                          icon: Icons.people_outline,
-                          activeIcon: Icons.people,
+                          icon: Icons.people_outline_rounded,
                           label: 'Users',
                           path: '/users',
                           currentRoute: currentRoute,
+                          isDark: isDark,
+                        ),
+                        _buildNavItem(
+                          icon: Icons.bar_chart_rounded,
+                          label: 'Analytics',
+                          path: '/analytics',
+                          currentRoute: currentRoute,
+                          isDark: isDark,
                         ),
                         _buildNavItem(
                           icon: Icons.settings_outlined,
-                          activeIcon: Icons.settings,
                           label: 'Settings',
                           path: '/settings',
                           currentRoute: currentRoute,
+                          isDark: isDark,
                         ),
                       ],
                     ),
                   ),
-                  // Sidebar Footer (Collapse Toggle + Logout)
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(top: BorderSide(color: borderColor, width: 1)),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                    child: Column(
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            _isSidebarCollapsed ? Icons.chevron_right : Icons.chevron_left,
-                            color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF64748B),
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isSidebarCollapsed = !_isSidebarCollapsed;
-                            });
-                          },
+
+                  // ── User Profile Footer ──────────────────────────────────
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      String name = 'Admin User';
+                      String role = 'Administrator';
+                      String initials = 'A';
+
+                      if (state is AuthAuthenticated) {
+                        name = state.user.name.isNotEmpty ? state.user.name : 'Admin User';
+                        role = _formatRole(state.user.role);
+                        initials = name
+                            .split(' ')
+                            .where((e) => e.isNotEmpty)
+                            .map((e) => e[0])
+                            .take(2)
+                            .join()
+                            .toUpperCase();
+                      }
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(top: BorderSide(color: borderColor, width: 1)),
                         ),
-                        const SizedBox(height: 8),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.logout_outlined,
-                            color: Color(0xFFEF4444),
-                          ),
-                          onPressed: _onLogout,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 18,
+                              backgroundColor: Theme.of(context).primaryColor,
+                              child: Text(
+                                initials,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    name,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    role,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w400,
+                                      color: isDark
+                                          ? const Color(0xFF8E8E8E)
+                                          : const Color(0xFF8E8E8E),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.logout_rounded,
+                                color: isDark
+                                    ? const Color(0xFF8E8E8E)
+                                    : const Color(0xFFADB5BD),
+                                size: 18,
+                              ),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              onPressed: _onLogout,
+                              tooltip: 'Sign out',
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -174,7 +269,7 @@ class _AdminLayoutState extends State<AdminLayout> {
                 children: [
                   // Top Sticky Navigation Bar
                   Container(
-                    height: 64,
+                    height: 60,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
                       color: topbarBg,
@@ -183,66 +278,62 @@ class _AdminLayoutState extends State<AdminLayout> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Breadcrumbs / Section Title
-                        Row(
-                          children: [
-                            Text(
-                              _getRouteName(currentRoute),
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: textColor,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          _getRouteName(currentRoute),
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
                         ),
-                        // Right widgets (Theme toggle, notifications, profile initials)
-                        Row(
-                          children: [
-                            BlocBuilder<AuthBloc, AuthState>(
-                              builder: (context, state) {
-                                if (state is AuthAuthenticated) {
-                                  final initials = state.user.name.isNotEmpty
-                                      ? state.user.name.split(' ').map((e) => e[0]).join().toUpperCase()
-                                      : 'A';
-                                  return Row(
-                                    children: [
-                                      Text(
-                                        state.user.name,
-                                        style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF475569),
-                                        ),
+                        BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                            if (state is AuthAuthenticated) {
+                              final initials = state.user.name.isNotEmpty
+                                  ? state.user.name
+                                      .split(' ')
+                                      .where((e) => e.isNotEmpty)
+                                      .map((e) => e[0])
+                                      .take(2)
+                                      .join()
+                                      .toUpperCase()
+                                  : 'A';
+                              return Row(
+                                children: [
+                                  Text(
+                                    state.user.name,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? const Color(0xFFA1A1AA)
+                                          : const Color(0xFF6C757D),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  CircleAvatar(
+                                    radius: 17,
+                                    backgroundColor: Theme.of(context).primaryColor,
+                                    child: Text(
+                                      initials,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
                                       ),
-                                      const SizedBox(width: 12),
-                                      CircleAvatar(
-                                        radius: 18,
-                                        backgroundColor: Theme.of(context).primaryColor,
-                                        child: Text(
-                                          initials.length > 2 ? initials.substring(0, 2) : initials,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }
-                                return const SizedBox.shrink();
-                              },
-                            ),
-                          ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
                         ),
                       ],
                     ),
                   ),
-                  // Tab contents
-                  Expanded(
-                    child: widget.child,
-                  ),
+                  // Page body
+                  Expanded(child: widget.child),
                 ],
               ),
             ),
@@ -252,73 +343,98 @@ class _AdminLayoutState extends State<AdminLayout> {
     );
   }
 
+  Widget _buildSectionLabel(String label, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          color: isDark ? const Color(0xFF6E6E6E) : const Color(0xFFADB5BD),
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+
   Widget _buildNavItem({
     required IconData icon,
-    required IconData activeIcon,
     required String label,
     required String path,
     required String currentRoute,
+    required bool isDark,
   }) {
     final isSelected = currentRoute == path || currentRoute.startsWith('$path/');
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Tooltip(
-        message: _isSidebarCollapsed ? label : '',
-        child: InkWell(
-          onTap: () => _onNavigate(path),
-          borderRadius: BorderRadius.circular(8),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? primaryColor.withOpacity(0.08)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: isSelected
-                  ? Border(left: BorderSide(color: primaryColor, width: 3.5))
-                  : null,
-            ),
-            child: Row(
-              mainAxisAlignment: _isSidebarCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
-              children: [
-                Icon(
-                  isSelected ? activeIcon : icon,
-                  color: isSelected ? primaryColor : (isDark ? const Color(0xFFA1A1AA) : const Color(0xFF64748B)),
-                  size: 22,
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: InkWell(
+        onTap: () => _onNavigate(path),
+        borderRadius: BorderRadius.circular(50),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? primaryColor.withOpacity(0.10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected
+                    ? primaryColor
+                    : (isDark ? const Color(0xFF8E8E8E) : const Color(0xFF6E6E6E)),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected
+                      ? primaryColor
+                      : (isDark ? const Color(0xFFCDCDCD) : const Color(0xFF4E4E4E)),
                 ),
-                if (!_isSidebarCollapsed) ...[
-                  const SizedBox(width: 12),
-                  Text(
-                    label,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected ? primaryColor : (isDark ? const Color(0xFFFAFAFA) : const Color(0xFF334155)),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
+  String _formatRole(String role) {
+    switch (role) {
+      case 'admin':
+        return 'Administrator';
+      case 'editor':
+        return 'Content Editor';
+      case 'moderator':
+        return 'Moderator';
+      default:
+        return 'Admin User';
+    }
+  }
+
   String _getRouteName(String path) {
-    if (path.startsWith('/dashboard')) return 'Dashboard Overview';
+    if (path.startsWith('/dashboard')) return 'Dashboard';
     if (path.startsWith('/recipes/new')) return 'Recipes / Add New Recipe';
     if (path.startsWith('/recipes/edit')) return 'Recipes / Edit Recipe';
     if (path.startsWith('/recipes/preview')) return 'Recipes / Preview Recipe';
-    if (path.startsWith('/recipes')) return 'Recipe Management';
-    if (path.startsWith('/categories')) return 'Category Management';
-    if (path.startsWith('/tags')) return 'Tag Management';
-    if (path.startsWith('/users')) return 'User Directory';
-    if (path.startsWith('/settings')) return 'System Settings';
-    return 'CMS Studio';
+    if (path.startsWith('/recipes')) return 'Recipes';
+    if (path.startsWith('/categories')) return 'Categories';
+    if (path.startsWith('/tags')) return 'Tags';
+    if (path.startsWith('/users')) return 'Users';
+    if (path.startsWith('/featured')) return 'Featured';
+    if (path.startsWith('/trending')) return 'Trending';
+    if (path.startsWith('/analytics')) return 'Analytics';
+    if (path.startsWith('/settings')) return 'Settings';
+    return 'Recipely Studio';
   }
 }
