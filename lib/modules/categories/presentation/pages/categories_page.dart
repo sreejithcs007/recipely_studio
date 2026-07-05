@@ -8,7 +8,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/services/dialog_service.dart';
 import '../../../../core/services/file_upload_service.dart';
 import '../../../../core/services/snackbar_service.dart';
-import '../../../../shared/widgets/buttons/custom_buttons.dart';
 import '../../../../shared/widgets/empty_states/empty_state.dart';
 import '../../../../shared/widgets/error_states/error_state.dart';
 import '../../../../shared/widgets/forms/custom_form_fields.dart';
@@ -27,6 +26,18 @@ class _CategoriesPageState extends State<CategoriesPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // Cycling icon backgrounds per card
+  static const _iconBgs = [
+    Color(0xFFFFF3DC),
+    Color(0xFFE8F5E9),
+    Color(0xFFFFE8EC),
+    Color(0xFFE8EAF6),
+    Color(0xFFE0F7FA),
+    Color(0xFFFFEDE0),
+    Color(0xFFF3E8FF),
+    Color(0xFFE8FFEE),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -42,14 +53,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
   void _showCategoryDialog([Category? category]) {
     showDialog(
       context: context,
-      builder: (dialogContext) {
-        return _CategoryFormDialog(
-          category: category,
-          onSave: () {
-            context.read<CategoryBloc>().add(LoadCategories());
-          },
-        );
-      },
+      builder: (dialogContext) => _CategoryFormDialog(
+        category: category,
+        onSave: () => context.read<CategoryBloc>().add(LoadCategories()),
+      ),
     );
   }
 
@@ -60,7 +67,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
       );
       return;
     }
-
     final confirmed = await GetIt.I<DialogService>().showConfirmDialog(
       context: context,
       title: 'Delete Category',
@@ -68,7 +74,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
       confirmLabel: 'Delete',
       isDestructive: true,
     );
-
     if (confirmed && mounted) {
       context.read<CategoryBloc>().add(DeleteCategoryRequested(category.id));
     }
@@ -76,12 +81,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF18181B) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF27272A) : const Color(0xFFE2E8F0);
-    final titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F6F8),
       body: BlocListener<CategoryBloc, CategoryState>(
         listener: (context, state) {
           if (state is CategoryOperationSuccess) {
@@ -91,220 +94,184 @@ class _CategoriesPageState extends State<CategoriesPage> {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header actions
+              // ── Header ────────────────────────────────────────────────────
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Categories Directory',
-                        style: GoogleFonts.inter(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: titleColor,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Organize recipes into categories and upload classification graphics.',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
-                  PrimaryButton(
-                    label: 'Create Category',
-                    icon: Icons.add,
-                    onPressed: () => _showCategoryDialog(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // Search Filter Row
-              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
-                    child: SizedBox(
-                      width: 400,
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (val) {
-                          setState(() {
-                            _searchQuery = val.trim().toLowerCase();
-                          });
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Search categories...',
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear, size: 18),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() {
-                                      _searchQuery = '';
-                                    });
-                                  },
-                                )
-                              : null,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'LIBRARY',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.1,
+                            color: primaryColor,
+                          ),
                         ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Categories',
+                          style: GoogleFonts.inter(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF0F0F0F),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Group recipes into curated collections that appear across the app.',
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            color: const Color(0xFF8E8E8E),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => _showCategoryDialog(),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text(
+                            'New Category',
+                            style: GoogleFonts.inter(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              // Table List
+              const SizedBox(height: 20),
+
+              // ── Search bar ─────────────────────────────────────────────────
+              SizedBox(
+                width: 340,
+                height: 44,
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                  style: GoogleFonts.inter(fontSize: 13.5),
+                  decoration: InputDecoration(
+                    hintText: 'Search categories...',
+                    hintStyle: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFFADB5BD)),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFFADB5BD)),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 16),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: primaryColor, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // ── Grid ───────────────────────────────────────────────────────
               Expanded(
                 child: BlocBuilder<CategoryBloc, CategoryState>(
                   builder: (context, state) {
                     if (state is CategoryLoading) {
-                      return _buildShimmerTable();
-                    } else if (state is CategoryFailure && state is! CategoryOperationSuccess) {
+                      return GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 280,
+                          mainAxisSpacing: 14,
+                          crossAxisSpacing: 14,
+                          childAspectRatio: 1.25,
+                        ),
+                        itemCount: 8,
+                        itemBuilder: (_, __) => ShimmerLoader(
+                          width: double.infinity,
+                          height: double.infinity,
+                          borderRadius: 14,
+                        ),
+                      );
+                    }
+
+                    if (state is CategoryFailure && state is! CategoryOperationSuccess) {
                       return ErrorState(
                         message: state.error,
                         onRetry: () => context.read<CategoryBloc>().add(LoadCategories()),
                       );
-                    } else if (state is CategoryLoaded || state is CategoryOperationSuccess) {
+                    }
+
+                    if (state is CategoryLoaded || state is CategoryOperationSuccess) {
                       final categories = state is CategoryLoaded
                           ? state.categories
                           : (context.read<CategoryBloc>().state as CategoryLoaded).categories;
 
-                      final filteredCategories = categories.where((cat) {
-                        return cat.name.toLowerCase().contains(_searchQuery);
-                      }).toList();
+                      final filtered = categories
+                          .where((c) => c.name.toLowerCase().contains(_searchQuery))
+                          .toList();
 
-                      if (filteredCategories.isEmpty) {
+                      if (filtered.isEmpty) {
                         return const EmptyState(
                           icon: Icons.category_outlined,
                           title: 'No Categories Found',
-                          description: 'Try modifying your search filter or create a new category.',
+                          description: 'Try modifying your search or create a new category.',
                         );
                       }
 
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: cardBg,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: borderColor),
+                      return GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 280,
+                          mainAxisSpacing: 14,
+                          crossAxisSpacing: 14,
+                          childAspectRatio: 1.25,
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.vertical,
-                            child: DataTable(
-                              headingRowColor: WidgetStateProperty.all(
-                                isDark ? const Color(0xFF09090B) : const Color(0xFFF8FAFC),
-                              ),
-                              columns: [
-                                DataColumn(
-                                  label: Text(
-                                    'Image',
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                DataColumn(
-                                  label: Text(
-                                    'Category Name',
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                DataColumn(
-                                  label: Text(
-                                    'Recipes Count',
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                DataColumn(
-                                  label: Text(
-                                    'Actions',
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ],
-                              rows: filteredCategories.map((cat) {
-                                return DataRow(
-                                  cells: [
-                                    DataCell(
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: cat.imageUrl.isNotEmpty
-                                            ? CachedNetworkImage(
-                                                imageUrl: cat.imageUrl,
-                                                width: 36,
-                                                height: 36,
-                                                fit: BoxFit.cover,
-                                                errorWidget: (c, u, e) => Container(
-                                                  width: 36,
-                                                  height: 36,
-                                                  color: Colors.grey[200],
-                                                  child: const Icon(Icons.image_not_supported, size: 16),
-                                                ),
-                                              )
-                                            : Container(
-                                                width: 36,
-                                                height: 36,
-                                                color: Colors.grey[200],
-                                                child: const Icon(Icons.category, size: 16),
-                                              ),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Text(
-                                        cat.name,
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).primaryColor.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(9999),
-                                        ),
-                                        child: Text(
-                                          '${cat.recipeCount} recipes',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    DataCell(
-                                      Row(
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.edit_outlined, color: Colors.blue),
-                                            tooltip: 'Edit Category',
-                                            onPressed: () => _showCategoryDialog(cat),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                            tooltip: 'Delete Category',
-                                            onPressed: () => _onDeleteCategory(cat),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final cat = filtered[index];
+                          final bg = _iconBgs[index % _iconBgs.length];
+                          return _CategoryCard(
+                            category: cat,
+                            iconBg: bg,
+                            onEdit: () => _showCategoryDialog(cat),
+                            onDelete: () => _onDeleteCategory(cat),
+                          );
+                        },
                       );
                     }
+
                     return const SizedBox.shrink();
                   },
                 ),
@@ -315,20 +282,190 @@ class _CategoriesPageState extends State<CategoriesPage> {
       ),
     );
   }
+}
 
-  Widget _buildShimmerTable() {
-    return Column(
-      children: List.generate(
-        5,
-        (index) => Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: ShimmerLoader(width: double.infinity, height: 50, borderRadius: 6),
+// ── Category Card ─────────────────────────────────────────────────────────────
+class _CategoryCard extends StatefulWidget {
+  final Category category;
+  final Color iconBg;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _CategoryCard({
+    required this.category,
+    required this.iconBg,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_CategoryCard> createState() => _CategoryCardState();
+}
+
+class _CategoryCardState extends State<_CategoryCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cat = widget.category;
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        transform: _hovered
+            ? (Matrix4.identity()..translate(0.0, -4.0))
+            : Matrix4.identity(),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _hovered ? primaryColor.withOpacity(0.25) : const Color(0xFFE2E8F0),
+          ),
+          boxShadow: _hovered
+              ? [BoxShadow(color: primaryColor.withOpacity(0.07), blurRadius: 14, offset: const Offset(0, 6))]
+              : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4)],
+        ),
+        child: Stack(
+          children: [
+            // Card content
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Circle icon with image
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: widget.iconBg,
+                      shape: BoxShape.circle,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: cat.imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: cat.imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(color: widget.iconBg),
+                            errorWidget: (_, __, ___) => Icon(
+                              Icons.grid_3x3_rounded,
+                              size: 24,
+                              color: primaryColor.withOpacity(0.6),
+                            ),
+                          )
+                        : Icon(
+                            Icons.grid_3x3_rounded,
+                            size: 24,
+                            color: primaryColor.withOpacity(0.6),
+                          ),
+                  ),
+                  const Spacer(),
+                  // Name
+                  Text(
+                    cat.name,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF0F0F0F),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  // Recipe count
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '${cat.recipeCount} ',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: primaryColor,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'recipes',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Hover actions — top right
+            if (_hovered)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Row(
+                  children: [
+                    _ActionIcon(
+                      icon: Icons.edit_outlined,
+                      color: const Color(0xFF3B82F6),
+                      tooltip: 'Edit',
+                      onTap: widget.onEdit,
+                    ),
+                    const SizedBox(width: 4),
+                    _ActionIcon(
+                      icon: Icons.delete_outline_rounded,
+                      color: const Color(0xFFEF4444),
+                      tooltip: 'Delete',
+                      onTap: widget.onDelete,
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 }
 
+class _ActionIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _ActionIcon({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 14, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Category Form Dialog (unchanged logic) ────────────────────────────────────
 class _CategoryFormDialog extends StatefulWidget {
   final Category? category;
   final VoidCallback onSave;
@@ -364,13 +501,11 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
       type: FileType.image,
       allowMultiple: false,
     );
-
     if (result != null && result.files.first.bytes != null) {
       final file = result.files.first;
       setState(() => _isUploading = true);
       try {
-        final service = GetIt.I<FileUploadService>();
-        final url = await service.uploadFile(
+        final url = await GetIt.I<FileUploadService>().uploadFile(
           bucket: 'recipe-images',
           fileName: 'category_${DateTime.now().millisecondsSinceEpoch}_${file.name}',
           fileBytes: file.bytes!,
@@ -389,21 +524,17 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   void _onSavePressed() {
     if (_formKey.currentState!.validate()) {
       if (widget.category == null) {
-        context.read<CategoryBloc>().add(
-              CreateCategoryRequested(
+        context.read<CategoryBloc>().add(CreateCategoryRequested(
+              name: _nameController.text.trim(),
+              imageUrl: _imageUrlController.text.trim(),
+            ));
+      } else {
+        context.read<CategoryBloc>().add(UpdateCategoryRequested(
+              widget.category!.copyWith(
                 name: _nameController.text.trim(),
                 imageUrl: _imageUrlController.text.trim(),
               ),
-            );
-      } else {
-        context.read<CategoryBloc>().add(
-              UpdateCategoryRequested(
-                widget.category!.copyWith(
-                  name: _nameController.text.trim(),
-                  imageUrl: _imageUrlController.text.trim(),
-                ),
-              ),
-            );
+            ));
       }
       widget.onSave();
       Navigator.of(context).pop();
@@ -413,9 +544,14 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isNew = widget.category == null;
+    final primaryColor = Theme.of(context).primaryColor;
 
     return AlertDialog(
-      title: Text(isNew ? 'Create New Category' : 'Edit Category'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        isNew ? 'New Category' : 'Edit Category',
+        style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700),
+      ),
       content: Form(
         key: _formKey,
         child: SizedBox(
@@ -425,45 +561,31 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
             children: [
               CustomTextField(
                 label: 'Category Name',
-                hintText: 'e.g. Italian, Desserts, Keto',
+                hintText: 'e.g. Breakfast, Desserts, Vegan',
                 controller: _nameController,
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter category name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              CustomTextField(
-                label: 'Image URL',
-                hintText: 'Paste image link or upload one',
-                controller: _imageUrlController,
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please provide a category image URL';
-                  }
-                  return null;
-                },
+                validator: (val) =>
+                    (val == null || val.trim().isEmpty) ? 'Please enter a category name' : null,
               ),
               const SizedBox(height: 16),
+              CustomTextField(
+                label: 'Image URL',
+                hintText: 'Paste image link or upload below',
+                controller: _imageUrlController,
+                validator: (val) =>
+                    (val == null || val.trim().isEmpty) ? 'Please provide an image URL' : null,
+              ),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Upload graphics:',
-                    style: GoogleFonts.inter(fontSize: 13, color: Colors.grey),
-                  ),
+                  Text('Upload image:', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey)),
                   _isUploading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : OutlineBtn(
-                          label: 'Pick File',
-                          icon: Icons.upload_file,
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : TextButton.icon(
                           onPressed: _pickImage,
+                          icon: const Icon(Icons.upload_rounded, size: 14),
+                          label: const Text('Pick File'),
+                          style: TextButton.styleFrom(foregroundColor: primaryColor),
                         ),
                 ],
               ),
@@ -474,15 +596,16 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text('Cancel', style: GoogleFonts.inter()),
         ),
         ElevatedButton(
           onPressed: _onSavePressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
+            backgroundColor: primaryColor,
             foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          child: Text(isNew ? 'Create' : 'Save Changes'),
+          child: Text(isNew ? 'Create' : 'Save Changes', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         ),
       ],
     );
