@@ -14,6 +14,8 @@ import '../../../../core/services/snackbar_service.dart';
 import '../bloc/dashboard_bloc.dart';
 import '../widgets/welcome_banner.dart';
 import '../widgets/dashboard_charts.dart';
+import '../../../categories/presentation/pages/categories_page.dart';
+import '../../../categories/presentation/bloc/category_bloc.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -59,7 +61,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   // ── 1. Welcome Banner ─────────────────────────────────────
                   WelcomeBanner(
                     stats: stats,
-                    onNewCategory: () => context.go('/categories?action=new'),
+                    onNewCategory: () => _showNewCategoryDialog(context),
                     onAddRecipe: () => context.go('/recipes/new'),
                     onUploadMedia: () => _showUploadMediaDialog(context),
                   ),
@@ -153,6 +155,23 @@ class _DashboardPageState extends State<DashboardPage> {
     showDialog(
       context: context,
       builder: (dialogContext) => const _UploadMediaDialog(),
+    );
+  }
+
+  void _showNewCategoryDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return BlocProvider<CategoryBloc>(
+          create: (_) => GetIt.I<CategoryBloc>(),
+          child: CategoryFormDialog(
+            onSave: () {
+              // Reload dashboard stats
+              context.read<DashboardBloc>().add(LoadDashboard());
+            },
+          ),
+        );
+      },
     );
   }
 }

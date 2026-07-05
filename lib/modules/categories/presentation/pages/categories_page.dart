@@ -59,7 +59,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   void _showCategoryDialog([Category? category]) {
     showDialog(
       context: context,
-      builder: (dialogContext) => _CategoryFormDialog(
+      builder: (dialogContext) => CategoryFormDialog(
         category: category,
         onSave: () => context.read<CategoryBloc>().add(LoadCategories()),
       ),
@@ -472,17 +472,17 @@ class _ActionIcon extends StatelessWidget {
 }
 
 // ── Category Form Dialog (unchanged logic) ────────────────────────────────────
-class _CategoryFormDialog extends StatefulWidget {
+class CategoryFormDialog extends StatefulWidget {
   final Category? category;
   final VoidCallback onSave;
 
-  const _CategoryFormDialog({this.category, required this.onSave});
+  const CategoryFormDialog({this.category, required this.onSave});
 
   @override
-  State<_CategoryFormDialog> createState() => _CategoryFormDialogState();
+  State<CategoryFormDialog> createState() => _CategoryFormDialogState();
 }
 
-class _CategoryFormDialogState extends State<_CategoryFormDialog> {
+class _CategoryFormDialogState extends State<CategoryFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _imageUrlController;
