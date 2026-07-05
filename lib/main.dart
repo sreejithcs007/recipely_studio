@@ -78,7 +78,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system, // Responsive theme matching system settings
+        themeMode: ThemeMode.light,
         routerConfig: AppRouter.router,
         scaffoldMessengerKey: SnackbarService.messengerKey,
       ),

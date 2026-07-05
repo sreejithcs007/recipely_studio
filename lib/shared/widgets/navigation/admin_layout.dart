@@ -28,7 +28,7 @@ class _AdminLayoutState extends State<AdminLayout> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sidebarBg = isDark ? const Color(0xFF18181B) : Colors.white;
-    final topbarBg = isDark ? const Color(0xFF09090B) : const Color(0xFFF8FAFC);
+    final topbarBg = isDark ? const Color(0xFF09090B) : Colors.white;
     final borderColor = isDark ? const Color(0xFF27272A) : const Color(0xFFE2E8F0);
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
 
