@@ -106,7 +106,7 @@ class RecipeModel extends Recipe {
       isFeatured: json['is_featured'] as bool? ?? false,
       isTrending: json['is_trending'] as bool? ?? false,
       isRecommended: json['is_recommended'] as bool? ?? false,
-      imageUrl: json['image_url'] as String? ?? '',
+      imageUrl: json['thumbnail_image_url'] as String? ?? '',
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at'] as String) 
           : DateTime.now(),
@@ -139,7 +139,7 @@ class RecipeModel extends Recipe {
       'is_featured': isFeatured,
       'is_trending': isTrending,
       'is_recommended': isRecommended,
-      'image_url': imageUrl,
+      'thumbnail_image_url': imageUrl,
     };
   }
 

@@ -102,7 +102,7 @@ class DashboardRemoteDataSource {
     // Fetch top 5 recently created recipes
     final response = await _supabaseClient
         .from('recipes')
-        .select('id, title, status, created_at, image_url, cuisine, difficulty')
+        .select('id, title, status, created_at, thumbnail_image_url, cuisine, difficulty')
         .isFilter('deleted_at', null)
         .order('created_at', ascending: false)
         .limit(5);

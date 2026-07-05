@@ -72,7 +72,7 @@ class RecentRecipes extends StatelessWidget {
                 final String cuisine = recipe['cuisine'] as String? ?? 'Global';
                 final String difficulty = recipe['difficulty'] as String? ?? 'Easy';
                 final String status = recipe['status'] as String? ?? 'published';
-                final String imageUrl = recipe['image_url'] as String? ?? '';
+                final String imageUrl = recipe['thumbnail_image_url'] as String? ?? '';
                 final String recipeId = recipe['id'] as String? ?? '';
 
                 return Row(
