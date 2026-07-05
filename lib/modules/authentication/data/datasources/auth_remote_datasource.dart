@@ -44,4 +44,11 @@ class AuthRemoteDataSource {
     }
     return null;
   }
+
+  Future<void> assignUserRole(String userId, String role) async {
+    await _supabaseClient.from('user_roles').insert({
+      'user_id': userId,
+      'role': role,
+    });
+  }
 }
