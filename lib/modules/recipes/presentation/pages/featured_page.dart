@@ -346,27 +346,22 @@ class _FeaturedCardState extends State<_FeaturedCard> {
                   Positioned.fill(
                     child: Container(color: widget.cardBg),
                   ),
-                  // Recipe image centered
-                  Center(
-                    child: imageUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            width: 110,
-                            height: 110,
-                            fit: BoxFit.contain,
-                            placeholder: (_, __) => const SizedBox(
-                              width: 110,
-                              height: 110,
-                              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                            ),
-                            errorWidget: (_, __, ___) => Icon(
-                              Icons.restaurant_rounded,
-                              size: 56,
-                              color: Colors.grey[400],
-                            ),
-                          )
-                        : Icon(Icons.restaurant_rounded, size: 56, color: Colors.grey[400]),
-                  ),
+                  // Recipe image — full bleed cover
+                  if (imageUrl.isNotEmpty)
+                    Positioned.fill(
+                      child: CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: widget.cardBg),
+                        errorWidget: (_, __, ___) => Center(
+                          child: Icon(Icons.restaurant_rounded, size: 56, color: Colors.grey[400]),
+                        ),
+                      ),
+                    )
+                  else
+                    Center(
+                      child: Icon(Icons.restaurant_rounded, size: 56, color: Colors.grey[400]),
+                    ),
                   // Position badge – top left
                   Positioned(
                     top: 12,
