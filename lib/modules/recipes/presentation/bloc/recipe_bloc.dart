@@ -155,6 +155,12 @@ class IngredientCubit extends Cubit<List<Ingredient>> {
     emit(list);
   }
 
+  void editIngredient(int index, Ingredient ing) {
+    final list = List<Ingredient>.from(state);
+    list[index] = ing;
+    emit(list);
+  }
+
   void reorderIngredients(int oldIndex, int newIndex) {
     var index = newIndex;
     if (oldIndex < newIndex) {
@@ -191,6 +197,12 @@ class InstructionCubit extends Cubit<List<StepItem>> {
       return StepItem(content: entry.value.content, stepNumber: entry.key + 1);
     }).toList();
     emit(updatedList);
+  }
+
+  void editStep(int index, String newContent) {
+    final list = List<StepItem>.from(state);
+    list[index] = StepItem(content: newContent, stepNumber: list[index].stepNumber);
+    emit(list);
   }
 
   void reorderSteps(int oldIndex, int newIndex) {

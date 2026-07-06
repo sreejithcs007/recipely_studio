@@ -54,9 +54,11 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
   final _ingQtyController = TextEditingController();
   final _ingUnitController = TextEditingController();
   bool _ingOptional = false;
+  int? _editingIngredientIndex;
 
   // Step 4 Step helper controller
   final _stepContentController = TextEditingController();
+  int? _editingStepIndex;
 
   // Step 5 selected category & tag IDs
   List<String> _selectedCategoryIds = [];
@@ -657,26 +659,51 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
                 ),
                 const SizedBox(width: 12),
                 PrimaryButton(
-                  label: 'Add',
+                  label: _editingIngredientIndex != null ? 'Save' : 'Add',
                   onPressed: () {
                     final name = _ingNameController.text.trim();
                     final qty = _ingQtyController.text.trim();
                     if (name.isNotEmpty && qty.isNotEmpty) {
-                      context.read<IngredientCubit>().addIngredient(
-                            Ingredient(
-                              name: name,
-                              quantity: qty,
-                              unit: _ingUnitController.text.trim().isEmpty ? null : _ingUnitController.text.trim(),
-                              isOptional: _ingOptional,
-                            ),
-                          );
+                      final ing = Ingredient(
+                        name: name,
+                        quantity: qty,
+                        unit: _ingUnitController.text.trim().isEmpty ? null : _ingUnitController.text.trim(),
+                        isOptional: _ingOptional,
+                      );
+                      if (_editingIngredientIndex != null) {
+                        context.read<IngredientCubit>().editIngredient(_editingIngredientIndex!, ing);
+                      } else {
+                        context.read<IngredientCubit>().addIngredient(ing);
+                      }
                       _ingNameController.clear();
                       _ingQtyController.clear();
                       _ingUnitController.clear();
-                      setState(() => _ingOptional = false);
+                      setState(() {
+                        _editingIngredientIndex = null;
+                        _ingOptional = false;
+                      });
                     }
                   },
                 ),
+                if (_editingIngredientIndex != null) ...[
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: () {
+                      _ingNameController.clear();
+                      _ingQtyController.clear();
+                      _ingUnitController.clear();
+                      setState(() {
+                        _editingIngredientIndex = null;
+                        _ingOptional = false;
+                      });
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('Cancel', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 24),
@@ -711,8 +738,33 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
                         children: [
                           if (ing.isOptional) StatusBadge(status: 'draft'),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => context.read<IngredientCubit>().removeIngredient(index),
+                            icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 20),
+                            onPressed: () {
+                              setState(() {
+                                _editingIngredientIndex = index;
+                                _ingNameController.text = ing.name;
+                                _ingQtyController.text = ing.quantity;
+                                _ingUnitController.text = ing.unit ?? '';
+                                _ingOptional = ing.isOptional;
+                              });
+                            },
+                            tooltip: 'Edit Ingredient',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                            onPressed: () {
+                              if (_editingIngredientIndex == index) {
+                                setState(() {
+                                  _editingIngredientIndex = null;
+                                  _ingNameController.clear();
+                                  _ingQtyController.clear();
+                                  _ingUnitController.clear();
+                                  _ingOptional = false;
+                                });
+                              }
+                              context.read<IngredientCubit>().removeIngredient(index);
+                            },
+                            tooltip: 'Delete Ingredient',
                           ),
                         ],
                       ),
@@ -743,22 +795,47 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
               children: [
                 Expanded(
                   child: CustomTextField(
-                    label: 'Instruction content for Step #${steps.length + 1}',
+                    label: _editingStepIndex != null
+                        ? 'Edit content for Step #${_editingStepIndex! + 1}'
+                        : 'Instruction content for Step #${steps.length + 1}',
                     hintText: 'Describe preparation procedures clearly here...',
                     controller: _stepContentController,
                   ),
                 ),
                 const SizedBox(width: 12),
                 PrimaryButton(
-                  label: 'Add Step',
+                  label: _editingStepIndex != null ? 'Save Step' : 'Add Step',
                   onPressed: () {
                     final content = _stepContentController.text.trim();
                     if (content.isNotEmpty) {
-                      context.read<InstructionCubit>().addStep(content);
+                      if (_editingStepIndex != null) {
+                        context.read<InstructionCubit>().editStep(_editingStepIndex!, content);
+                      } else {
+                        context.read<InstructionCubit>().addStep(content);
+                      }
                       _stepContentController.clear();
+                      setState(() {
+                        _editingStepIndex = null;
+                      });
                     }
                   },
                 ),
+                if (_editingStepIndex != null) ...[
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: () {
+                      _stepContentController.clear();
+                      setState(() {
+                        _editingStepIndex = null;
+                      });
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('Cancel', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 24),
@@ -796,9 +873,33 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
                         ),
                       ),
                       title: Text(step.content),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => context.read<InstructionCubit>().removeStep(index),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 20),
+                            onPressed: () {
+                              setState(() {
+                                _editingStepIndex = index;
+                                _stepContentController.text = step.content;
+                              });
+                            },
+                            tooltip: 'Edit Step',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                            onPressed: () {
+                              if (_editingStepIndex == index) {
+                                setState(() {
+                                  _editingStepIndex = null;
+                                  _stepContentController.clear();
+                                });
+                              }
+                              context.read<InstructionCubit>().removeStep(index);
+                            },
+                            tooltip: 'Delete Step',
+                          ),
+                        ],
                       ),
                     );
                   },
