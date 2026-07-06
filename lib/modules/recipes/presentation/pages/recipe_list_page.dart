@@ -1213,8 +1213,30 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
       final trendingVal = trendingIdx != -1 && row.length > trendingIdx
           ? (row[trendingIdx]?.toString().trim().toLowerCase() == 'true' || row[trendingIdx]?.toString().trim() == '1')
           : false;
+      int parseSpiceLevel(dynamic cellValue) {
+        if (cellValue == null) return 0;
+        final clean = cellValue.toString().trim().toLowerCase();
+        if (clean.isEmpty) return 0;
+        
+        final parsedInt = int.tryParse(clean);
+        if (parsedInt != null) {
+          return parsedInt.clamp(0, 3);
+        }
+        
+        if (clean.contains('extra') || clean.contains('extreme') || clean == 'hot' || clean == '3') {
+          return 3;
+        }
+        if (clean.contains('very') || clean.contains('high') || clean == '2') {
+          return 2;
+        }
+        if (clean.contains('medium') || clean == 'spicy' || clean == '1') {
+          return 1;
+        }
+        return 0;
+      }
+
       final spiceVal = spiceIdx != -1 && row.length > spiceIdx
-          ? int.tryParse(row[spiceIdx]?.toString() ?? '') ?? 0
+          ? parseSpiceLevel(row[spiceIdx])
           : 0;
       final ratingVal = ratingIdx != -1 && row.length > ratingIdx
           ? double.tryParse(row[ratingIdx]?.toString() ?? '') ?? 4.5

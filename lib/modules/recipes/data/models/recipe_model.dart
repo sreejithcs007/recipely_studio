@@ -121,6 +121,7 @@ class RecipeModel extends Recipe {
     return {
       'title': title,
       'description': description,
+      'rating': rating,
       'prep_time': prepTime,
       'cook_time': cookTime,
       'total_time': totalTime,

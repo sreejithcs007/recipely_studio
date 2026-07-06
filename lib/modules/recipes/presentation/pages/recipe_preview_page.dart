@@ -220,6 +220,8 @@ class _RecipePreviewPageState extends State<RecipePreviewPage> {
           _buildDetailRow('Calories', recipe.calories),
           _buildDetailRow('Servings', recipe.servings),
           _buildDetailRow('Difficulty', recipe.difficulty),
+          _buildDetailRow('Spicy Level', '${recipe.spiceLevel} / 3'),
+          _buildDetailRow('Rating', '${recipe.rating} ★'),
           _buildDetailRow('Cuisine', recipe.cuisine ?? 'Global'),
           _buildDetailRow('Estimated Cost', '\$${recipe.estimatedCost.toStringAsFixed(2)}'),
           const Divider(height: 32),
