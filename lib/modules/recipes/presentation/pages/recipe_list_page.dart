@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get_it/get_it.dart';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/repositories/recipe_repository.dart';
 
 import '../../../../core/services/dialog_service.dart';
@@ -883,8 +884,8 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
   String? _errorMessage;
 
   void _downloadSampleTemplate() {
-    final csvContent = 'title,description,cuisine,difficulty,prep_time_minutes,cook_time_minutes,servings,calories,estimated_cost,image_url,ingredients,steps\n'
-        'Truffle Risotto,Creamy mushroom rice,Italian,Medium,15,25,4,350,15.0,https://images.unsplash.com/photo-1546171780-9541a052800f?w=600,2 cups Arborio Rice; 1 tbsp Truffle Oil; 4 cups vegetable broth,Toast rice in skillet; Add broth slowly while stirring; Drizzle truffle oil on top\n';
+    final csvContent = 'title,description,cuisine,difficulty,prep_time_minutes,cook_time_minutes,servings,calories,estimated_cost,image_url,ingredients,steps,category,tag,is_featured,is_trending\r\n'
+        'Truffle Risotto,Creamy mushroom rice,Italian,Medium,15,25,4,350,15.0,https://images.unsplash.com/photo-1546171780-9541a052800f?w=600,2 cups Arborio Rice; 1 tbsp Truffle Oil; 4 cups vegetable broth,Toast rice in skillet; Add broth slowly while stirring; Drizzle truffle oil on top,Italian;Rice,Vegetarian;Gluten-Free,true,false\r\n';
     try {
       final bytes = utf8.encode(csvContent);
       final blob = html.Blob([bytes], 'text/csv');
@@ -1000,19 +1001,74 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
   }
 
   List<Recipe> _parseCsv(String csvString) {
-    var csvTable = const CsvToListConverter().convert(csvString);
-    if (csvTable.isEmpty) {
-      throw Exception('The CSV file is empty.');
+    // Normalize smart/curly quotes to standard double quotes to support formatted text editors
+    final normalizedString = csvString
+        .replaceAll('“', '"')
+        .replaceAll('”', '"')
+        .replaceAll('„', '"');
+
+    // Auto-detect delimiter from the first line (common are semicolon, tab, and comma)
+    String delimiter = ',';
+    final firstLineEnd = normalizedString.indexOf('\n');
+    final firstLine = firstLineEnd != -1 ? normalizedString.substring(0, firstLineEnd) : normalizedString;
+    if (firstLine.contains(';')) {
+      delimiter = ';';
+    } else if (firstLine.contains('\t')) {
+      delimiter = '\t';
     }
 
-    // Auto-detect delimiter (semicolon or tab)
-    if (csvTable.first.length == 1) {
-      final cellStr = csvTable.first.first.toString();
-      if (cellStr.contains(';')) {
-        csvTable = const CsvToListConverter(fieldDelimiter: ';').convert(csvString);
-      } else if (cellStr.contains('\t')) {
-        csvTable = const CsvToListConverter(fieldDelimiter: '\t').convert(csvString);
+    final List<List<String>> csvTable = [];
+    List<String> currentRow = [];
+    final StringBuffer currentField = StringBuffer();
+    bool inQuotes = false;
+
+    for (int i = 0; i < normalizedString.length; i++) {
+      final char = normalizedString[i];
+
+      if (inQuotes) {
+        if (char == '"') {
+          // Check for escaped double quote ("")
+          if (i + 1 < normalizedString.length && normalizedString[i + 1] == '"') {
+            currentField.write('"');
+            i++; // skip next quote
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          currentField.write(char);
+        }
+      } else {
+        if (char == '"') {
+          inQuotes = true;
+        } else if (char == delimiter) {
+          currentRow.add(currentField.toString().trim());
+          currentField.clear();
+        } else if (char == '\n') {
+          currentRow.add(currentField.toString().trim());
+          currentField.clear();
+          csvTable.add(currentRow);
+          currentRow = [];
+        } else if (char == '\r') {
+          if (i + 1 < normalizedString.length && normalizedString[i + 1] == '\n') {
+            i++;
+          }
+          currentRow.add(currentField.toString().trim());
+          currentField.clear();
+          csvTable.add(currentRow);
+          currentRow = [];
+        } else {
+          currentField.write(char);
+        }
       }
+    }
+
+    if (currentField.isNotEmpty || currentRow.isNotEmpty) {
+      currentRow.add(currentField.toString().trim());
+      csvTable.add(currentRow);
+    }
+
+    if (csvTable.isEmpty) {
+      throw Exception('The CSV file is empty.');
     }
 
     final headers = csvTable.first.map((e) => e.toString().toLowerCase().trim()).toList();
@@ -1031,10 +1087,14 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
     final cookIdx = headers.indexWhere((h) => h == 'cook_time' || h == 'cook_time_minutes');
     final servingsIdx = headers.indexOf('servings');
     final caloriesIdx = headers.indexOf('calories');
-    final costIdx = headers.indexWhere((h) => h == 'cost' || h == 'estimated_cost');
+    final costIdx = headers.indexWhere((h) => h == 'cost' || h == 'estimated_cost' || h == 'estimated');
     final imageIdx = headers.indexWhere((h) => h == 'image_url' || h == 'thumbnail_image_url');
     final ingredientsIdx = headers.indexOf('ingredients');
     final stepsIdx = headers.indexWhere((h) => h == 'steps' || h == 'instructions');
+    final categoryIdx = headers.indexWhere((h) => h == 'category' || h == 'categories');
+    final tagIdx = headers.indexWhere((h) => h == 'tag' || h == 'tags');
+    final featuredIdx = headers.indexWhere((h) => h == 'featured' || h == 'is_featured');
+    final trendingIdx = headers.indexWhere((h) => h == 'trending' || h == 'is_trending');
 
     final List<Recipe> recipes = [];
 
@@ -1047,7 +1107,18 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
 
       final description = descIdx != -1 && row.length > descIdx ? row[descIdx]?.toString().trim() ?? '' : '';
       final cuisine = cuisineIdx != -1 && row.length > cuisineIdx ? row[cuisineIdx]?.toString().trim() ?? 'Global' : 'Global';
-      final difficulty = difficultyIdx != -1 && row.length > difficultyIdx ? row[difficultyIdx]?.toString().trim() ?? 'Easy' : 'Easy';
+      // Normalize difficulty to capitalized format ('Easy', 'Medium', 'Hard') to satisfy check constraint
+      final rawDiff = (difficultyIdx != -1 && row.length > difficultyIdx)
+          ? row[difficultyIdx]?.toString().trim().toLowerCase() ?? 'easy'
+          : 'easy';
+      final String difficulty;
+      if (rawDiff.startsWith('h')) {
+        difficulty = 'Hard';
+      } else if (rawDiff.startsWith('m')) {
+        difficulty = 'Medium';
+      } else {
+        difficulty = 'Easy';
+      }
       
       final prepVal = prepIdx != -1 && row.length > prepIdx ? int.tryParse(row[prepIdx]?.toString() ?? '') ?? 15 : 15;
       final cookVal = cookIdx != -1 && row.length > cookIdx ? int.tryParse(row[cookIdx]?.toString() ?? '') ?? 30 : 30;
@@ -1088,12 +1159,58 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
           final items = rawSteps.split(';');
           int stepNum = 1;
           for (final item in items) {
-            final trimmedStep = item.trim();
+            var trimmedStep = item.trim();
             if (trimmedStep.isEmpty) continue;
+            
+            // Clean outer double-quotes if any
+            if (trimmedStep.startsWith('"') && trimmedStep.endsWith('"') && trimmedStep.length >= 2) {
+              trimmedStep = trimmedStep.substring(1, trimmedStep.length - 1).trim();
+            }
+            if (trimmedStep.isEmpty) continue;
+
+            // Ensure first letter is capitalized
+            if (trimmedStep.isNotEmpty) {
+              trimmedStep = trimmedStep[0].toUpperCase() + trimmedStep.substring(1);
+            }
+
+            // Ensure step content is at least 20 characters to satisfy database check constraints
+            if (trimmedStep.length < 20) {
+              trimmedStep = '$trimmedStep details and procedures description';
+            }
+
             stepList.add(StepItem(content: trimmedStep, stepNumber: stepNum++));
           }
         }
       }
+
+      final List<String> categories = [];
+      if (categoryIdx != -1 && row.length > categoryIdx) {
+        final rawCats = row[categoryIdx]?.toString() ?? '';
+        if (rawCats.isNotEmpty) {
+          categories.addAll(rawCats.split(';').map((c) => c.trim()).where((c) => c.isNotEmpty));
+        }
+      }
+      if (categories.isEmpty && cuisine.isNotEmpty) {
+        categories.add(cuisine);
+      }
+
+      final List<String> tags = [];
+      if (tagIdx != -1 && row.length > tagIdx) {
+        final rawTags = row[tagIdx]?.toString() ?? '';
+        if (rawTags.isNotEmpty) {
+          tags.addAll(rawTags.split(';').map((t) => t.trim()).where((t) => t.isNotEmpty));
+        }
+      }
+      if (tags.isEmpty) {
+        tags.add(difficulty);
+      }
+
+      final featuredVal = featuredIdx != -1 && row.length > featuredIdx
+          ? (row[featuredIdx]?.toString().trim().toLowerCase() == 'true' || row[featuredIdx]?.toString().trim() == '1')
+          : false;
+      final trendingVal = trendingIdx != -1 && row.length > trendingIdx
+          ? (row[trendingIdx]?.toString().trim().toLowerCase() == 'true' || row[trendingIdx]?.toString().trim() == '1')
+          : false;
 
       recipes.add(Recipe(
         id: '',
@@ -1116,13 +1233,15 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
         spiceLevel: 0,
         estimatedCost: costVal,
         status: 'published',
-        isFeatured: false,
-        isTrending: false,
+        isFeatured: featuredVal,
+        isTrending: trendingVal,
         isRecommended: false,
         imageUrl: imageUrl,
         createdAt: DateTime.now(),
         ingredients: ingredientList,
         steps: stepList,
+        categories: categories,
+        tags: tags,
       ));
     }
 
@@ -1146,8 +1265,76 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
       _importProgressIndex = 0;
     });
 
+    final client = Supabase.instance.client;
     final repo = GetIt.I<RecipeRepository>();
     bool success = true;
+
+    // Helper to find or create a category by name
+    Future<String> getOrCreateCategory(String categoryName) async {
+      final name = categoryName.trim();
+      if (name.isEmpty) return '';
+
+      try {
+        final existing = await client
+            .from('categories')
+            .select('id')
+            .eq('name', name)
+            .isFilter('deleted_at', null)
+            .maybeSingle();
+
+        if (existing != null) {
+          return existing['id'] as String;
+        }
+
+        // Insert new category
+        final inserted = await client
+            .from('categories')
+            .insert({
+              'name': name,
+              'image_url': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600', // default placeholder
+            })
+            .select('id')
+            .single();
+
+        return inserted['id'] as String;
+      } catch (e) {
+        debugPrint('Error getting/creating category "$name": $e');
+        return '';
+      }
+    }
+
+    // Helper to find or create a tag by name
+    Future<String> getOrCreateTag(String tagName) async {
+      final name = tagName.trim();
+      if (name.isEmpty) return '';
+
+      try {
+        final existing = await client
+            .from('tags')
+            .select('id')
+            .eq('name', name)
+            .maybeSingle();
+
+        if (existing != null) {
+          return existing['id'] as String;
+        }
+
+        // Insert new tag
+        final inserted = await client
+            .from('tags')
+            .insert({
+              'name': name,
+              'type': 'diet', // default tag type
+            })
+            .select('id')
+            .single();
+
+        return inserted['id'] as String;
+      } catch (e) {
+        debugPrint('Error getting/creating tag "$name": $e');
+        return '';
+      }
+    }
 
     for (int i = 0; i < _parsedRecipes!.length; i++) {
       setState(() {
@@ -1156,10 +1343,31 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
 
       try {
         final recipe = _parsedRecipes![i];
-        await repo.saveRecipe(recipe, [], []);
+        
+        // Resolve category names to database IDs
+        final List<String> categoryIds = [];
+        for (final catName in recipe.categories) {
+          final catId = await getOrCreateCategory(catName);
+          if (catId.isNotEmpty) {
+            categoryIds.add(catId);
+          }
+        }
+
+        // Resolve tag names to database IDs
+        final List<String> tagIds = [];
+        for (final tagName in recipe.tags) {
+          final tagId = await getOrCreateTag(tagName);
+          if (tagId.isNotEmpty) {
+            tagIds.add(tagId);
+          }
+        }
+
+        await repo.saveRecipe(recipe, categoryIds, tagIds);
       } catch (e) {
         success = false;
-        GetIt.I<SnackbarService>().showError('Error importing "${_parsedRecipes![i].title}": $e');
+        final recipe = _parsedRecipes![i];
+        final stepDetails = recipe.steps.map((s) => '"${s.content}" (len: ${s.content.length})').join(', ');
+        GetIt.I<SnackbarService>().showError('Error importing "${recipe.title}". Steps: [$stepDetails]. Error: $e');
         break;
       }
     }
