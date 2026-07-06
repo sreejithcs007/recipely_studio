@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get_it/get_it.dart';
+import 'package:csv/csv.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../domain/repositories/recipe_repository.dart';
 
 import '../../../../core/services/dialog_service.dart';
 import '../../../../core/services/snackbar_service.dart';
@@ -150,6 +155,13 @@ class _RecipesListPageState extends State<RecipesListPage> {
                     ],
                   ),
                 ),
+                // Import CSV button
+                _OutlineButton(
+                  icon: Icons.upload_file_rounded,
+                  label: 'Import CSV',
+                  onTap: () => _showImportCsvDialog(context),
+                ),
+                const SizedBox(width: 10),
                 // Export button
                 _OutlineButton(
                   icon: Icons.download_rounded,
@@ -357,6 +369,20 @@ class _RecipesListPageState extends State<RecipesListPage> {
           child: ShimmerLoader(width: double.infinity, height: 56, borderRadius: 8),
         ),
       ),
+    );
+  }
+
+  void _showImportCsvDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return _ImportCsvDialog(
+          onImportCompleted: () {
+            _loadRecipes();
+          },
+        );
+      },
     );
   }
 }
@@ -834,6 +860,485 @@ class _FilterChip extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Bulk CSV Import Dialog ──────────────────────────────────────────────────
+class _ImportCsvDialog extends StatefulWidget {
+  final VoidCallback onImportCompleted;
+
+  const _ImportCsvDialog({required this.onImportCompleted});
+
+  @override
+  State<_ImportCsvDialog> createState() => _ImportCsvDialogState();
+}
+
+class _ImportCsvDialogState extends State<_ImportCsvDialog> {
+  String? _fileName;
+  List<Recipe>? _parsedRecipes;
+  bool _isParsing = false;
+  bool _isImporting = false;
+  int _importProgressIndex = 0;
+  String? _errorMessage;
+
+  void _downloadSampleTemplate() {
+    final csvContent = 'title,description,cuisine,difficulty,prep_time_minutes,cook_time_minutes,servings,calories,estimated_cost,image_url,ingredients,steps\n'
+        'Truffle Risotto,Creamy mushroom rice,Italian,Medium,15,25,4,350,15.0,https://images.unsplash.com/photo-1546171780-9541a052800f?w=600,2 cups Arborio Rice; 1 tbsp Truffle Oil; 4 cups vegetable broth,Toast rice in skillet; Add broth slowly while stirring; Drizzle truffle oil on top\n';
+    try {
+      final bytes = utf8.encode(csvContent);
+      final blob = html.Blob([bytes], 'text/csv');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.document.createElement('a') as html.AnchorElement
+        ..href = url
+        ..style.display = 'none'
+        ..download = 'recipes_import_template.csv';
+      html.document.body!.children.add(anchor);
+      anchor.click();
+      html.document.body!.children.remove(anchor);
+      html.Url.revokeObjectUrl(url);
+    } catch (e) {
+      GetIt.I<SnackbarService>().showError('Download failed: $e');
+    }
+  }
+
+  Future<void> _pickAndParseFile() async {
+    setState(() {
+      _isParsing = true;
+      _errorMessage = null;
+      _parsedRecipes = null;
+    });
+
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        allowMultiple: false,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        setState(() => _isParsing = false);
+        return;
+      }
+
+      final file = result.files.first;
+      final fileName = file.name.toLowerCase();
+      if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        throw Exception(
+          'You selected an Excel (.xlsx/.xls) file. '
+          'Please save/export your spreadsheet as a CSV (.csv) file in Microsoft Excel or Google Sheets, '
+          'then try uploading again.'
+        );
+      }
+
+      final bytes = file.bytes;
+      if (bytes == null) {
+        throw Exception('Could not read file bytes.');
+      }
+
+      // Check first 4 bytes for standard ZIP/Excel signature (PK\x03\x04)
+      if (bytes.length >= 4 &&
+          bytes[0] == 0x50 && // 'P'
+          bytes[1] == 0x4B && // 'K'
+          bytes[2] == 0x03 &&
+          bytes[3] == 0x04) {
+        throw Exception(
+          'The uploaded file is an Excel spreadsheet (.xlsx). '
+          'Please open it in Excel, click "Save As", select "CSV (Comma delimited) (*.csv)" as the format, '
+          'and upload the exported CSV file.'
+        );
+      }
+
+      String rawString;
+      // 1. Check for UTF-16 LE BOM (0xFF, 0xFE)
+      if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+        final codes = <int>[];
+        for (int i = 2; i < bytes.length - 1; i += 2) {
+          codes.add(bytes[i] | (bytes[i + 1] << 8));
+        }
+        rawString = String.fromCharCodes(codes);
+      }
+      // 2. Check for UTF-16 BE BOM (0xFE, 0xFF)
+      else if (bytes.length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF) {
+        final codes = <int>[];
+        for (int i = 2; i < bytes.length - 1; i += 2) {
+          codes.add((bytes[i] << 8) | bytes[i + 1]);
+        }
+        rawString = String.fromCharCodes(codes);
+      }
+      // 3. Standard UTF-8 decoding with Latin-1 fallback
+      else {
+        try {
+          rawString = utf8.decode(bytes);
+        } catch (_) {
+          rawString = latin1.decode(bytes);
+        }
+      }
+
+      // Standardize line endings to standard LF (\n)
+      final csvString = rawString
+          .replaceAll('\r\n', '\n')
+          .replaceAll('\r', '\n')
+          .replaceAll('\u2028', '\n')
+          .replaceAll('\u2029', '\n')
+          .replaceAll('\u0085', '\n')
+          .replaceAll('\f', '\n');
+
+      final recipes = _parseCsv(csvString);
+
+      setState(() {
+        _fileName = file.name;
+        _parsedRecipes = recipes;
+        _isParsing = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isParsing = false;
+        _errorMessage = 'Failed to parse CSV: ${e.toString()}';
+      });
+    }
+  }
+
+  List<Recipe> _parseCsv(String csvString) {
+    var csvTable = const CsvToListConverter().convert(csvString);
+    if (csvTable.isEmpty) {
+      throw Exception('The CSV file is empty.');
+    }
+
+    // Auto-detect delimiter (semicolon or tab)
+    if (csvTable.first.length == 1) {
+      final cellStr = csvTable.first.first.toString();
+      if (cellStr.contains(';')) {
+        csvTable = const CsvToListConverter(fieldDelimiter: ';').convert(csvString);
+      } else if (cellStr.contains('\t')) {
+        csvTable = const CsvToListConverter(fieldDelimiter: '\t').convert(csvString);
+      }
+    }
+
+    final headers = csvTable.first.map((e) => e.toString().toLowerCase().trim()).toList();
+    final titleIdx = headers.indexOf('title');
+    if (titleIdx == -1) {
+      throw Exception(
+        "Required column 'title' not found in CSV.\n"
+        "Detected columns: $headers"
+      );
+    }
+
+    final descIdx = headers.indexWhere((h) => h == 'description' || h == 'desc');
+    final cuisineIdx = headers.indexOf('cuisine');
+    final difficultyIdx = headers.indexOf('difficulty');
+    final prepIdx = headers.indexWhere((h) => h == 'prep_time' || h == 'prep_time_minutes');
+    final cookIdx = headers.indexWhere((h) => h == 'cook_time' || h == 'cook_time_minutes');
+    final servingsIdx = headers.indexOf('servings');
+    final caloriesIdx = headers.indexOf('calories');
+    final costIdx = headers.indexWhere((h) => h == 'cost' || h == 'estimated_cost');
+    final imageIdx = headers.indexWhere((h) => h == 'image_url' || h == 'thumbnail_image_url');
+    final ingredientsIdx = headers.indexOf('ingredients');
+    final stepsIdx = headers.indexWhere((h) => h == 'steps' || h == 'instructions');
+
+    final List<Recipe> recipes = [];
+
+    for (int i = 1; i < csvTable.length; i++) {
+      final row = csvTable[i];
+      if (row.length <= titleIdx) continue;
+
+      final title = row[titleIdx]?.toString().trim() ?? '';
+      if (title.isEmpty) continue;
+
+      final description = descIdx != -1 && row.length > descIdx ? row[descIdx]?.toString().trim() ?? '' : '';
+      final cuisine = cuisineIdx != -1 && row.length > cuisineIdx ? row[cuisineIdx]?.toString().trim() ?? 'Global' : 'Global';
+      final difficulty = difficultyIdx != -1 && row.length > difficultyIdx ? row[difficultyIdx]?.toString().trim() ?? 'Easy' : 'Easy';
+      
+      final prepVal = prepIdx != -1 && row.length > prepIdx ? int.tryParse(row[prepIdx]?.toString() ?? '') ?? 15 : 15;
+      final cookVal = cookIdx != -1 && row.length > cookIdx ? int.tryParse(row[cookIdx]?.toString() ?? '') ?? 30 : 30;
+      final servingsVal = servingsIdx != -1 && row.length > servingsIdx ? int.tryParse(row[servingsIdx]?.toString() ?? '') ?? 4 : 4;
+      final caloriesVal = caloriesIdx != -1 && row.length > caloriesIdx ? int.tryParse(row[caloriesIdx]?.toString() ?? '') ?? 350 : 350;
+      final costVal = costIdx != -1 && row.length > costIdx ? double.tryParse(row[costIdx]?.toString() ?? '') ?? 10.0 : 10.0;
+      final imageUrl = imageIdx != -1 && row.length > imageIdx ? row[imageIdx]?.toString().trim() ?? '' : '';
+
+      // Parse ingredients separated by semicolon
+      final List<Ingredient> ingredientList = [];
+      if (ingredientsIdx != -1 && row.length > ingredientsIdx) {
+        final rawIngs = row[ingredientsIdx]?.toString() ?? '';
+        if (rawIngs.isNotEmpty) {
+          final items = rawIngs.split(';');
+          for (final item in items) {
+            final trimmedItem = item.trim();
+            if (trimmedItem.isEmpty) continue;
+
+            final regex = RegExp(r'^([0-9\/\.\s]+)\s*([a-zA-Z]+)?\s+(.+)$');
+            final match = regex.firstMatch(trimmedItem);
+            if (match != null) {
+              final qty = match.group(1)?.trim() ?? '1';
+              final unit = match.group(2)?.trim();
+              final name = match.group(3)?.trim() ?? trimmedItem;
+              ingredientList.add(Ingredient(name: name, quantity: qty, unit: unit, isOptional: false));
+            } else {
+              ingredientList.add(Ingredient(name: trimmedItem, quantity: '1', unit: null, isOptional: false));
+            }
+          }
+        }
+      }
+
+      // Parse steps separated by semicolon
+      final List<StepItem> stepList = [];
+      if (stepsIdx != -1 && row.length > stepsIdx) {
+        final rawSteps = row[stepsIdx]?.toString() ?? '';
+        if (rawSteps.isNotEmpty) {
+          final items = rawSteps.split(';');
+          int stepNum = 1;
+          for (final item in items) {
+            final trimmedStep = item.trim();
+            if (trimmedStep.isEmpty) continue;
+            stepList.add(StepItem(content: trimmedStep, stepNumber: stepNum++));
+          }
+        }
+      }
+
+      recipes.add(Recipe(
+        id: '',
+        title: title,
+        description: description,
+        rating: 4.5,
+        reviewsCount: 0,
+        prepTime: '$prepVal mins',
+        cookTime: '$cookVal mins',
+        totalTime: '${prepVal + cookVal} mins',
+        calories: '$caloriesVal kcal',
+        servings: '$servingsVal servings',
+        prepTimeMinutes: prepVal,
+        cookTimeMinutes: cookVal,
+        totalTimeMinutes: prepVal + cookVal,
+        caloriesInt: caloriesVal,
+        servingsInt: servingsVal,
+        cuisine: cuisine,
+        difficulty: difficulty,
+        spiceLevel: 0,
+        estimatedCost: costVal,
+        status: 'published',
+        isFeatured: false,
+        isTrending: false,
+        isRecommended: false,
+        imageUrl: imageUrl,
+        createdAt: DateTime.now(),
+        ingredients: ingredientList,
+        steps: stepList,
+      ));
+    }
+
+    if (recipes.isEmpty) {
+      throw Exception(
+        'No valid recipe rows found in CSV.\n'
+        'Total rows in file: ${csvTable.length}\n'
+        'Detected Headers: $headers\n'
+        'First data row: ${csvTable.length > 1 ? csvTable[1] : "None"}'
+      );
+    }
+
+    return recipes;
+  }
+
+  Future<void> _startImport() async {
+    if (_parsedRecipes == null || _parsedRecipes!.isEmpty) return;
+
+    setState(() {
+      _isImporting = true;
+      _importProgressIndex = 0;
+    });
+
+    final repo = GetIt.I<RecipeRepository>();
+    bool success = true;
+
+    for (int i = 0; i < _parsedRecipes!.length; i++) {
+      setState(() {
+        _importProgressIndex = i;
+      });
+
+      try {
+        final recipe = _parsedRecipes![i];
+        await repo.saveRecipe(recipe, [], []);
+      } catch (e) {
+        success = false;
+        GetIt.I<SnackbarService>().showError('Error importing "${_parsedRecipes![i].title}": $e');
+        break;
+      }
+    }
+
+    setState(() {
+      _isImporting = false;
+    });
+
+    if (success) {
+      GetIt.I<SnackbarService>().showSuccess('Successfully imported ${_parsedRecipes!.length} recipes!');
+      widget.onImportCompleted();
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Icon(Icons.upload_file_rounded, color: primaryColor, size: 24),
+          const SizedBox(width: 10),
+          Text(
+            'Bulk Import Recipes',
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 500,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_errorMessage != null) ...[
+              Container(
+                constraints: const BoxConstraints(maxHeight: 120),
+                width: double.infinity,
+                child: SingleChildScrollView(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF5F5),
+                      border: Border.all(color: const Color(0xFFFEB2B2)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFFC53030)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (_parsedRecipes == null && !_isParsing) ...[
+              Text(
+                'Upload a CSV spreadsheet to import multiple recipes at once. The file must include a "title" header.',
+                style: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF6C757D), height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: _downloadSampleTemplate,
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.download_rounded, size: 16, color: primaryColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Download CSV Import Template',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Center(
+                child: OutlinedButton.icon(
+                  onPressed: _pickAndParseFile,
+                  icon: const Icon(Icons.file_open_rounded, size: 16),
+                  label: Text('Select CSV File', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF4E4E4E),
+                    side: const BorderSide(color: Color(0xFFDEE2E6)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ] else if (_isParsing) ...[
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ] else if (_isImporting) ...[
+              Text(
+                'Importing recipes to Supabase...',
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: (_importProgressIndex + 1) / _parsedRecipes!.length,
+                backgroundColor: const Color(0xFFE2E8F0),
+                valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Importing ${_importProgressIndex + 1} of ${_parsedRecipes!.length}: "${_parsedRecipes![_importProgressIndex].title}"',
+                style: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF6C757D)),
+              ),
+            ] else ...[
+              Text(
+                'File: $_fileName',
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF4E4E4E)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Found ${_parsedRecipes!.length} valid recipes in CSV file.',
+                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF2B6CB0)),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Preview of Recipes:',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 180,
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListView.separated(
+                  itemCount: _parsedRecipes!.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFFAFAFA)),
+                  itemBuilder: (context, index) {
+                    final r = _parsedRecipes![index];
+                    return ListTile(
+                      dense: true,
+                      title: Text(r.title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+                      subtitle: Text('${r.cuisine} · ${r.difficulty} · ${r.ingredients.length} ingredients · ${r.steps.length} steps', style: GoogleFonts.inter(fontSize: 11)),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        if (!_isImporting) ...[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey)),
+          ),
+          if (_parsedRecipes != null)
+            ElevatedButton(
+              onPressed: _startImport,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text('Start Import', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
+        ],
+      ],
     );
   }
 }

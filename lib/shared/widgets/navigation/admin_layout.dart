@@ -148,6 +148,13 @@ class _AdminLayoutState extends State<AdminLayout> {
                           currentRoute: currentRoute,
                           isDark: isDark,
                         ),
+                        _buildNavItem(
+                          icon: Icons.photo_library_outlined,
+                          label: 'Media Library',
+                          path: '/media',
+                          currentRoute: currentRoute,
+                          isDark: isDark,
+                        ),
                         const SizedBox(height: 8),
                         _buildSectionLabel('PLATFORM', isDark),
                         _buildNavItem(
@@ -430,6 +437,7 @@ class _AdminLayoutState extends State<AdminLayout> {
     if (path.startsWith('/recipes')) return 'Recipes';
     if (path.startsWith('/categories')) return 'Categories';
     if (path.startsWith('/tags')) return 'Tags';
+    if (path.startsWith('/media')) return 'Media Library';
     if (path.startsWith('/users')) return 'Users';
     if (path.startsWith('/featured')) return 'Featured';
     if (path.startsWith('/trending')) return 'Trending';

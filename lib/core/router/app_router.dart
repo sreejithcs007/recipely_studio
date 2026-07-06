@@ -18,6 +18,7 @@ import '../../../modules/settings/presentation/pages/settings_page.dart';
 import '../../../modules/recipes/presentation/pages/featured_page.dart';
 import '../../../modules/recipes/presentation/pages/trending_page.dart';
 import '../../../modules/dashboard/presentation/pages/analytics_page.dart';
+import '../../../modules/media/presentation/pages/media_library_page.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> parentNavigatorKey =
@@ -109,6 +110,10 @@ class AppRouter {
           GoRoute(
             path: '/tags',
             builder: (context, state) => const TagsPage(),
+          ),
+          GoRoute(
+            path: '/media',
+            builder: (context, state) => const MediaLibraryPage(),
           ),
           GoRoute(
             path: '/users',
