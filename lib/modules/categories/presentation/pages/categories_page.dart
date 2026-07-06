@@ -222,7 +222,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                           maxCrossAxisExtent: 280,
                           mainAxisSpacing: 14,
                           crossAxisSpacing: 14,
-                          childAspectRatio: 1.25,
+                          childAspectRatio: 0.9,
                         ),
                         itemCount: 8,
                         itemBuilder: (_, __) => ShimmerLoader(
@@ -262,7 +262,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                           maxCrossAxisExtent: 280,
                           mainAxisSpacing: 14,
                           crossAxisSpacing: 14,
-                          childAspectRatio: 1.25,
+                          childAspectRatio: 0.9,
                         ),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
@@ -315,6 +315,10 @@ class _CategoryCardState extends State<_CategoryCard> {
   Widget build(BuildContext context) {
     final cat = widget.category;
     final primaryColor = Theme.of(context).primaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E1E24) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF0F0F0F);
+    final borderColor = isDark ? const Color(0xFF27272A) : const Color(0xFFE2E8F0);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -325,90 +329,108 @@ class _CategoryCardState extends State<_CategoryCard> {
             ? (Matrix4.identity()..translate(0.0, -4.0))
             : Matrix4.identity(),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _hovered ? primaryColor.withOpacity(0.25) : const Color(0xFFE2E8F0),
+            color: _hovered ? primaryColor.withOpacity(0.4) : borderColor,
           ),
           boxShadow: _hovered
-              ? [BoxShadow(color: primaryColor.withOpacity(0.07), blurRadius: 14, offset: const Offset(0, 6))]
+              ? [BoxShadow(color: primaryColor.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 6))]
               : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4)],
         ),
         child: Stack(
           children: [
-            // Card content
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Circle icon with image
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: widget.iconBg,
-                      shape: BoxShape.circle,
-                    ),
-                    clipBehavior: Clip.antiAlias,
+            // Card layout: Image top, Details bottom
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Top half: Image
+                Expanded(
+                  flex: 5,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                     child: cat.imageUrl.isNotEmpty
                         ? CachedNetworkImage(
                             imageUrl: cat.imageUrl,
                             fit: BoxFit.cover,
                             placeholder: (_, __) => Container(color: widget.iconBg),
-                            errorWidget: (_, __, ___) => Icon(
-                              Icons.grid_3x3_rounded,
-                              size: 24,
-                              color: primaryColor.withOpacity(0.6),
+                            errorWidget: (_, __, ___) => Container(
+                              color: widget.iconBg,
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 32,
+                                color: primaryColor.withOpacity(0.6),
+                              ),
                             ),
                           )
-                        : Icon(
-                            Icons.grid_3x3_rounded,
-                            size: 24,
-                            color: primaryColor.withOpacity(0.6),
+                        : Container(
+                            color: widget.iconBg,
+                            child: Icon(
+                              Icons.category_outlined,
+                              size: 32,
+                              color: primaryColor.withOpacity(0.6),
+                            ),
                           ),
                   ),
-                  const Spacer(),
-                  // Name
-                  Text(
-                    cat.name,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F0F0F),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  // Recipe count
-                  RichText(
-                    text: TextSpan(
+                ),
+                // Divider line
+                Container(
+                  height: 1,
+                  color: borderColor,
+                ),
+                // Bottom half: Details
+                Expanded(
+                  flex: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        TextSpan(
-                          text: '${cat.recipeCount} ',
+                        Text(
+                          cat.name.toUpperCase(),
                           style: GoogleFonts.inter(
-                            fontSize: 13,
+                            fontSize: 11,
                             fontWeight: FontWeight.w700,
+                            letterSpacing: 1.0,
                             color: primaryColor,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        TextSpan(
-                          text: 'recipes',
+                        const SizedBox(height: 6),
+                        Text(
+                          '${cat.name} Collection',
                           style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            color: primaryColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: titleColor,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(Icons.restaurant_menu_rounded, size: 14, color: Colors.grey[500]),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${cat.recipeCount} ${cat.recipeCount == 1 ? "Recipe" : "Recipes"}',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            // Hover actions — top right
+            // Hover actions — top right (overlaying on top of the image)
             if (_hovered)
               Positioned(
                 top: 10,
@@ -421,7 +443,7 @@ class _CategoryCardState extends State<_CategoryCard> {
                       tooltip: 'Edit',
                       onTap: widget.onEdit,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     _ActionIcon(
                       icon: Icons.delete_outline_rounded,
                       color: const Color(0xFFEF4444),

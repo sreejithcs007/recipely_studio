@@ -44,6 +44,7 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
   final _caloriesController = TextEditingController(text: '350');
   final _servingsController = TextEditingController(text: '4');
   final _costController = TextEditingController(text: '15.0');
+  final _ratingController = TextEditingController(text: '4.5');
   
   String _selectedCuisine = 'Italian';
   String _selectedDifficulty = 'Easy';
@@ -95,6 +96,7 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
     _caloriesController.dispose();
     _servingsController.dispose();
     _costController.dispose();
+    _ratingController.dispose();
     _ingNameController.dispose();
     _ingQtyController.dispose();
     _ingUnitController.dispose();
@@ -116,6 +118,7 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
         _caloriesController.text = '${recipe.caloriesInt}';
         _servingsController.text = '${recipe.servingsInt}';
         _costController.text = '${recipe.estimatedCost}';
+        _ratingController.text = '${recipe.rating}';
         _selectedCuisine = recipe.cuisine ?? 'Italian';
         _selectedDifficulty = recipe.difficulty;
         _selectedSpiceLevel = recipe.spiceLevel;
@@ -196,12 +199,13 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
     final calories = int.tryParse(_caloriesController.text) ?? 350;
     final servings = int.tryParse(_servingsController.text) ?? 4;
     final cost = double.tryParse(_costController.text) ?? 15.0;
+    final rating = double.tryParse(_ratingController.text) ?? 4.5;
 
     final recipePayload = Recipe(
       id: _existingRecipe?.id ?? '',
       title: _titleController.text.trim(),
       description: _descController.text.trim(),
-      rating: _existingRecipe?.rating ?? 4.5,
+      rating: rating,
       reviewsCount: _existingRecipe?.reviewsCount ?? 0,
       prepTime: '$prepMins mins',
       cookTime: '$cookMins mins',
@@ -484,6 +488,20 @@ class _RecipeWizardPageState extends State<RecipeWizardPage> {
                   items: difficultiesList.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
                   onChanged: (val) {
                     if (val != null) setState(() => _selectedDifficulty = val);
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: CustomTextField(
+                  label: 'Rating (0.0 to 5.0)',
+                  controller: _ratingController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (val) {
+                    final d = double.tryParse(val ?? '');
+                    if (d == null) return 'Enter rating';
+                    if (d < 0.0 || d > 5.0) return 'Must be 0-5';
+                    return null;
                   },
                 ),
               ),
