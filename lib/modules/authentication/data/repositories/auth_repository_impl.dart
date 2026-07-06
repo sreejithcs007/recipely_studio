@@ -27,6 +27,12 @@ class AuthRepositoryImpl implements AuthRepository {
     // Owner / developer auto-bypass fallback to allow initial login setup
     if (role == null && (session.user!.email == 'sreejithcs365@gmail.com')) {
       role = 'admin';
+      try {
+        await _remoteDataSource.assignUserRole(userId, 'admin');
+      } catch (e) {
+        // Log it but continue so they can still access
+        print('Error inserting admin user role: $e');
+      }
     }
 
     if (role == null || (role != 'admin' && role != 'editor' && role != 'moderator')) {
@@ -65,6 +71,12 @@ class AuthRepositoryImpl implements AuthRepository {
     // Owner / developer auto-bypass fallback to allow initial login setup
     if (role == null && (session.user!.email == 'sreejithcs365@gmail.com')) {
       role = 'admin';
+      try {
+        await _remoteDataSource.assignUserRole(userId, 'admin');
+      } catch (e) {
+        // Log it but continue so they can still access
+        print('Error inserting admin user role: $e');
+      }
     }
 
     if (role == null || (role != 'admin' && role != 'editor' && role != 'moderator')) {
