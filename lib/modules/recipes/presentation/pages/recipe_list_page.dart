@@ -884,8 +884,8 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
   String? _errorMessage;
 
   void _downloadSampleTemplate() {
-    final csvContent = 'title,description,cuisine,difficulty,prep_time_minutes,cook_time_minutes,servings,calories,estimated_cost,image_url,ingredients,steps,category,tag,is_featured,is_trending,spice_level\r\n'
-        'Truffle Risotto,Creamy mushroom rice,Italian,Medium,15,25,4,350,15.0,https://images.unsplash.com/photo-1546171780-9541a052800f?w=600,2 cups Arborio Rice; 1 tbsp Truffle Oil; 4 cups vegetable broth,Toast rice in skillet; Add broth slowly while stirring; Drizzle truffle oil on top,Italian;Rice,Vegetarian;Gluten-Free,true,false,1\r\n';
+    final csvContent = 'title,description,cuisine,difficulty,prep_time_minutes,cook_time_minutes,servings,calories,estimated_cost,image_url,ingredients,steps,category,tag,is_featured,is_trending,spice_level,rating\r\n'
+        'Truffle Risotto,Creamy mushroom rice,Italian,Medium,15,25,4,350,15.0,https://images.unsplash.com/photo-1546171780-9541a052800f?w=600,2 cups Arborio Rice; 1 tbsp Truffle Oil; 4 cups vegetable broth,Toast rice in skillet; Add broth slowly while stirring; Drizzle truffle oil on top,Italian;Rice,Vegetarian;Gluten-Free,true,false,1,4.5\r\n';
     try {
       final bytes = utf8.encode(csvContent);
       final blob = html.Blob([bytes], 'text/csv');
@@ -1096,6 +1096,7 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
     final featuredIdx = headers.indexWhere((h) => h == 'featured' || h == 'is_featured');
     final trendingIdx = headers.indexWhere((h) => h == 'trending' || h == 'is_trending');
     final spiceIdx = headers.indexWhere((h) => h == 'spice_level' || h == 'spicy_level' || h == 'spice' || h == 'spicy');
+    final ratingIdx = headers.indexOf('rating');
 
     final List<Recipe> recipes = [];
 
@@ -1215,12 +1216,15 @@ class _ImportCsvDialogState extends State<_ImportCsvDialog> {
       final spiceVal = spiceIdx != -1 && row.length > spiceIdx
           ? int.tryParse(row[spiceIdx]?.toString() ?? '') ?? 0
           : 0;
+      final ratingVal = ratingIdx != -1 && row.length > ratingIdx
+          ? double.tryParse(row[ratingIdx]?.toString() ?? '') ?? 4.5
+          : 4.5;
 
       recipes.add(Recipe(
         id: '',
         title: title,
         description: description,
-        rating: 4.5,
+        rating: ratingVal,
         reviewsCount: 0,
         prepTime: '$prepVal mins',
         cookTime: '$cookVal mins',
