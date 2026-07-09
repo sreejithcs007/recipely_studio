@@ -1,156 +1,233 @@
-# Recipely Studio
+<img width="1536" height="1024" alt="ChatGPT Image Jul 9, 2026, 02_51_26 PM" src="https://github.com/user-attachments/assets/68b27df3-dac4-4a01-93ea-1a959a0e56bd" />
 
-### Your Culinary Journey, Simplified.
+# 🧑‍🍳 Recipely Studio
 
-Recipely Studio is a smart recipe companion designed to bridge the gap between inspiration and the kitchen. It empowers home cooks to discover curated meals, manage custom recipes, and execute step-by-step cooking instructions with absolute focus.
+### Modern Flutter Admin Panel for Recipe Management
 
----
+Recipely Studio is a **Flutter-powered administration platform** built to manage the complete Recipely ecosystem. It enables administrators to create recipes, organize categories and tags, manage media assets, curate featured content, monitor analytics, and publish content through a clean, responsive dashboard.
 
-## Why Recipely?
-
-*   **Interactive Guided Checklist:** Seamlessly track preparation lists and step instructions with checklist states to keep users organized in the kitchen.
-*   **Media Library Management:** Upload images directly to Supabase storage buckets, retrieve public URLs, copy asset links, and delete unneeded files.
-*   **Feature-First Scalability:** Built upon clean code principles that make adding features or refactoring modules predictable and modular.
-*   **Aesthetic Analytics Dashboard:** Render beautiful data charts on user sessions, cooks, and saves to gauge application engagement.
+> **Flutter • Clean Architecture • BLoC • Supabase • PostgreSQL**
 
 ---
 
-## Features
+# ✨ Highlights
 
-### 🍽 Discovery
-Browse recipe listings categorized by cuisines, difficulty levels, and spice intensity with text query filtering.
-
-### 👨‍🍳 Cooking Experience
-Follow structured, step-by-step instruction lists with clean check-off indicators to monitor progress.
-
-### ❤️ Personalization
-Create and update your own custom recipes using a multi-step builder wizard.
-
-### ⚡ Performance
-Navigate instantly between feeds with cached network image views and clean state caching.
+- 🏗 Feature-First Clean Architecture
+- 🧩 BLoC State Management
+- ☁️ Supabase Backend & Storage
+- 📊 Analytics Dashboard
+- 📂 Media Library
+- ⭐ Featured & Trending Management
+- 🏷 Categories & Tags
+- 📱 Responsive Desktop UI
 
 ---
 
-## Tech Stack
+# 🚀 Features
 
-| Category | Technology / Library |
-| :--- | :--- |
-| **Frontend** | Flutter (Dart SDK) |
+## 📖 Recipe Management
+
+- Create, edit, publish, and delete recipes
+- Multi-step recipe creation wizard
+- Ingredient and instruction management
+- Difficulty, cuisine, nutrition, and metadata support
+- CSV recipe import & export
+
+---
+
+## 🏷 Category & Tag Management
+
+- Create and organize recipe categories
+- Manage cuisines, dietary tags, meal types, and ingredients
+- Dynamic filtering and searching
+- Responsive card-based layouts
+
+---
+
+## ⭐ Content Curation
+
+- Manage Featured recipes
+- Control Trending recipes
+- Configure homepage content
+- Organize recipe visibility
+
+---
+
+## 🖼 Media Library
+
+- Upload images directly to Supabase Storage
+- Copy public URLs
+- Delete unused assets
+- Search uploaded media
+- Image preview support
+
+---
+
+## 📊 Dashboard & Analytics
+
+- Recipe statistics
+- Category overview
+- User metrics
+- Interactive charts
+- Content performance dashboard
+
+---
+
+## ⚡ Performance
+
+- Optimized widget rebuilds
+- Cached network images
+- Fast table rendering
+- Responsive layouts
+- Smooth animations
+- Efficient filtering & searching
+
+---
+
+# 🛠 Technology Stack
+
+| Category | Technology |
+|-----------|------------|
+| **Framework** | Flutter & Dart |
 | **Architecture** | Feature-First Clean Architecture |
-| **State Management** | BLoC / Cubit (flutter_bloc) |
-| **Backend & Database**| Supabase, PostgreSQL |
-| **Routing** | GoRouter (go_router) |
-| **Data Analytics** | FL Chart (fl_chart) |
-| **Utilities** | GetIt (DI), CachedNetworkImage, CSV Parser |
-| **Testing** | Flutter Test |
+| **State Management** | flutter_bloc |
+| **Backend** | Supabase |
+| **Database** | PostgreSQL |
+| **Storage** | Supabase Storage |
+| **Routing** | GoRouter |
+| **Charts** | fl_chart |
+| **Dependency Injection** | get_it |
+| **Image Loading** | CachedNetworkImage |
+| **Utilities** | CSV Import/Export |
 
 ---
 
-## Screenshots
+# 📸 Screenshots
 
-| Feed Dashboard | Recipe Preview | Wizard Builder |
-| :---: | :---: | :---: |
-| ![Dashboard Placeholder](https://via.placeholder.com/280x600?text=Dashboard+Feed) | ![Recipe Preview Placeholder](https://via.placeholder.com/280x600?text=Recipe+Details) | ![Wizard Placeholder](https://via.placeholder.com/280x600?text=Creation+Wizard) |
+| Dashboard | Recipes | Featured |
+|-----------|----------|-----------|
+| Screenshot | Screenshot | Screenshot |
 
----
-
-## Architecture
-
-This project is built using **Clean Architecture** principles structured in a **feature-first organization**. Each feature folder isolates its own data, domain, and presentation layers.
-We decouple code layers using the **Repository Pattern** and implement **Dependency Injection** via GetIt to keep classes testable and mockable. Presentation views are assembled from reusable, modular widgets to keep layouts consistent and clean.
+| Trending | Categories | Analytics |
+|-----------|------------|-----------|
+| Screenshot | Screenshot | Screenshot |
 
 ---
 
-## Performance
+# 🏗 Architecture
 
-✔ **Smooth scrolling** through long list feeds and complex nested grids.
+Recipely Studio follows a **Feature-First Clean Architecture**, separating the application into **Presentation**, **Domain**, and **Data** layers.
 
-✔ **Cached images** loaded from memory for instant visual feedback.
-
-✔ **60 FPS animations** for page transitions, sliders, and selection states.
+Business logic is managed using **BLoC**, while repositories abstract communication with Supabase. Dependency Injection is handled through **GetIt**, allowing every feature to remain modular, testable, and independently scalable.
 
 ---
 
-## Engineering Highlights
+# ⚙ Engineering Highlights
 
-*   **State Management (BLoC/Cubit):** Utilizes unidirectional data flow to completely decouple business logic from the user interface.
-*   **Media Upload & Storage:** Interacts directly with Supabase Storage buckets for uploading assets, handling public link resolution, and storage cleanup.
-*   **Robust CSV Importer:** Built a custom RFC-4180 state-machine parser to process nested newlines and commas within spreadsheet cells without alignment shifting.
-*   **Step Form Wizard:** Implemented inline list item modification widgets with stateful controllers to add, edit, and reorder steps and ingredients inside a unified multi-page form.
+- Feature-first modular architecture
+- Clean Architecture implementation
+- Repository Pattern
+- BLoC & Cubit state management
+- GoRouter navigation
+- Dependency Injection with GetIt
+- Supabase Authentication & Database
+- Supabase Storage integration
+- Custom CSV parser for recipe import
+- Responsive admin dashboard
+- Interactive analytics using FL Chart
+- Cached image optimization
 
 ---
 
-## Folder Structure
+# 📂 Project Structure
 
 ```text
 lib/
-├── core/                       # App-wide routing, theme tokens, and global DI services
-│   ├── router/                 # Central GoRouter configuration and route registries
-│   └── services/               # Common abstractions (dialogs, snackbars, permissions)
-├── modules/                    # Isolated feature domains
-│   ├── authentication/         # Sign-in workflows and admin user session blocks
-│   ├── categories/             # Curated meal category grids and split aspect-ratio cards
-│   ├── dashboard/              # Metrics overview, FL Chart widgets, and user insights
-│   ├── media/                  # Media library asset manager and image copy/delete
-│   └── recipes/                # Recipe lists, details, CSV parser, and wizard builder
-│       ├── data/               # Models, repositories, and remote Supabase datasources
-│       ├── domain/             # Business rules, use cases, and abstract repositories
-│       └── presentation/       # Page views, nested widget components, and BLoC states
-└── shared/                     # Global reusable UI widgets (badges, shimmers, layouts)
+├── core/
+│   ├── router/
+│   ├── services/
+│   ├── theme/
+│   └── utils/
+│
+├── modules/
+│   ├── authentication/
+│   ├── dashboard/
+│   ├── recipes/
+│   ├── featured/
+│   ├── trending/
+│   ├── categories/
+│   ├── tags/
+│   ├── media/
+│   ├── analytics/
+│   └── settings/
+│
+├── shared/
+│   ├── widgets/
+│   ├── models/
+│   ├── repositories/
+│   └── services/
+│
+└── main.dart
 ```
 
 ---
 
-## Getting Started
+# 🚀 Getting Started
 
-### Prerequisites
+## Prerequisites
 
-*   Flutter SDK (v3.19+ recommended)
-*   Dart SDK (v3.3+ recommended)
-*   A Supabase database project with standard table schemas
-
-### Installation
-
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/yourusername/recipely.git
-    cd recipely
-    ```
-
-2.  Install dependencies:
-    ```bash
-    flutter pub get
-    ```
-
-3.  Configure database credentials:
-    Create/update [lib/env.dart](file:///d:/New%20folder/recipely_studio/lib/env.dart) with your credentials:
-    ```dart
-    class Env {
-      static const String supabaseUrl = 'YOUR_SUPABASE_URL';
-      static const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
-    }
-    ```
-
-4.  Run the application:
-    ```bash
-    flutter run -d chrome  # Or your mobile emulator/device
-    ```
+- Flutter SDK (Latest Stable)
+- Dart SDK
+- Supabase Project
 
 ---
 
-## Future Improvements
+## Installation
 
-*   **Offline Cache Synchronization:** Auto-sync offline edits to Supabase once an active connection is restored.
-*   **Ingredient Unit Scaling:** Scale recipe ingredient quantities dynamically based on selected serving counts.
-*   **Voice Control Integration:** Support hand-free step navigation via local text-to-speech commands.
+Clone the repository
+
+```bash
+git clone https://github.com/yourusername/recipely-studio.git
+```
+
+Install dependencies
+
+```bash
+flutter pub get
+```
+
+Generate code
+
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+Configure your Supabase credentials.
+
+Run the project
+
+```bash
+flutter run
+```
 
 ---
 
-## About the Developer
+# 💡 Key Engineering Decisions
 
-I design clean, scalable mobile architectures with an emphasis on performance and maintainability.
+- Feature-first folder organization
+- Repository Pattern for data abstraction
+- Scalable BLoC architecture
+- Responsive desktop-first layouts
+- Modular reusable widgets
+- Optimized image loading
+- Clean separation of concerns
 
-*   **Portfolio:** [yourportfolio.com](https://yourportfolio.com)
-*   **LinkedIn:** [linkedin.com/in/yourprofile](https://linkedin.com/in/yourprofile)
-*   **GitHub:** [github.com/yourusername](https://github.com/yourusername)
-*   **Email:** [yourname@email.com](mailto:yourname@email.com)
+---
+
+
+
+## ⭐ Support
+
+If you found this project useful, consider giving it a **⭐**.
+
+Contributions, feedback, and suggestions are always welcome.
