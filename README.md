@@ -1,36 +1,33 @@
-# Recipely
+# Recipely Studio
 
 ### Your Culinary Journey, Simplified.
 
-Recipely is a smart recipe companion designed to bridge the gap between inspiration and the kitchen. It empowers home cooks to discover curated meals, manage custom recipes, and execute step-by-step cooking instructions with absolute focus.
+Recipely Studio is a smart recipe companion designed to bridge the gap between inspiration and the kitchen. It empowers home cooks to discover curated meals, manage custom recipes, and execute step-by-step cooking instructions with absolute focus.
 
 ---
 
 ## Why Recipely?
 
-*   **Interactive Guided Cooking:** Keeps your screen active and guides you through cooking processes without distractions.
-*   **Intuitive & Fluid Interface:** Designed with micro-interactions and polished layouts that prioritize readability in active kitchen environments.
-*   **Feature-First Scalability:** Built upon clean code principles that make adding features or refactoring modules predictable and seamless.
-*   **Optimized Asset Delivery:** Handles network-heavy images and rich UI states efficiently, ensuring smooth operation even on lower-end devices.
+*   **Interactive Guided Checklist:** Seamlessly track preparation lists and step instructions with checklist states to keep users organized in the kitchen.
+*   **Media Library Management:** Upload images directly to Supabase storage buckets, retrieve public URLs, copy asset links, and delete unneeded files.
+*   **Feature-First Scalability:** Built upon clean code principles that make adding features or refactoring modules predictable and modular.
+*   **Aesthetic Analytics Dashboard:** Render beautiful data charts on user sessions, cooks, and saves to gauge application engagement.
 
 ---
 
 ## Features
 
 ### 🍽 Discovery
-Browse curated recipe listings categorized by cuisines, difficulty levels, and spice intensity with smart text search.
+Browse recipe listings categorized by cuisines, difficulty levels, and spice intensity with text query filtering.
 
 ### 👨‍🍳 Cooking Experience
-Follow structured, step-by-step instruction lists with clean checklist views to track your active preparation step.
+Follow structured, step-by-step instruction lists with clean check-off indicators to monitor progress.
 
 ### ❤️ Personalization
-Create, edit, and organize your own custom recipes using an intuitive multi-step builder wizard.
+Create and update your own custom recipes using a multi-step builder wizard.
 
 ### ⚡ Performance
-Navigate instantly between feeds with cached content, optimized lazy loading, and quick-loading list layouts.
-
-### ♿ Accessibility
-Enjoy comfortable legibility with clear contrast layouts, high-contrast badges, and support for screen scaling.
+Navigate instantly between feeds with cached network image views and clean state caching.
 
 ---
 
@@ -40,13 +37,12 @@ Enjoy comfortable legibility with clear contrast layouts, high-contrast badges, 
 | :--- | :--- |
 | **Frontend** | Flutter (Dart SDK) |
 | **Architecture** | Feature-First Clean Architecture |
-| **State Management** | BLoC / Cubit |
-| **Backend** | Supabase Backend-as-a-Service |
-| **Database** | PostgreSQL (Supabase) |
-| **Routing** | GoRouter |
-| **Local Storage** | Hydrated BLoC / Shared Preferences |
+| **State Management** | BLoC / Cubit (flutter_bloc) |
+| **Backend & Database**| Supabase, PostgreSQL |
+| **Routing** | GoRouter (go_router) |
+| **Data Analytics** | FL Chart (fl_chart) |
 | **Utilities** | GetIt (DI), CachedNetworkImage, CSV Parser |
-| **Testing** | Bloc Test, Mockito |
+| **Testing** | Flutter Test |
 
 ---
 
@@ -54,14 +50,14 @@ Enjoy comfortable legibility with clear contrast layouts, high-contrast badges, 
 
 | Feed Dashboard | Recipe Preview | Wizard Builder |
 | :---: | :---: | :---: |
-| ![Dashboard Placeholder](https://via.placeholder.com/280x600?text=Dashboard+Feed) | ![Preview Placeholder](https://via.placeholder.com/280x600?text=Recipe+Details) | ![Wizard Placeholder](https://via.placeholder.com/280x600?text=Creation+Wizard) |
+| ![Dashboard Placeholder](https://via.placeholder.com/280x600?text=Dashboard+Feed) | ![Recipe Preview Placeholder](https://via.placeholder.com/280x600?text=Recipe+Details) | ![Wizard Placeholder](https://via.placeholder.com/280x600?text=Creation+Wizard) |
 
 ---
 
 ## Architecture
 
 This project is built using **Clean Architecture** principles structured in a **feature-first organization**. Each feature folder isolates its own data, domain, and presentation layers.
-We decouple code layers using the **Repository Pattern** and implement **Dependency Injection** via GetIt to keep classes testable and mockable. Presentation views are assembled from highly reusable, modular widgets to keep layouts consistent and clean.
+We decouple code layers using the **Repository Pattern** and implement **Dependency Injection** via GetIt to keep classes testable and mockable. Presentation views are assembled from reusable, modular widgets to keep layouts consistent and clean.
 
 ---
 
@@ -69,27 +65,18 @@ We decouple code layers using the **Repository Pattern** and implement **Depende
 
 ✔ **Smooth scrolling** through long list feeds and complex nested grids.
 
-✔ **Optimized rebuilds** preventing unnecessary widget tree refreshes.
-
 ✔ **Cached images** loaded from memory for instant visual feedback.
 
-✔ **Lazy loading** of recipes to reduce initial network payloads.
-
 ✔ **60 FPS animations** for page transitions, sliders, and selection states.
-
-✔ **Responsive layouts** scaling seamlessly across various mobile and web viewport sizes.
 
 ---
 
 ## Engineering Highlights
 
 *   **State Management (BLoC/Cubit):** Utilizes unidirectional data flow to completely decouple business logic from the user interface.
-*   **Fine-Grained Rebuilds (BlocSelector):** Limits widget updates to specific fields, preventing entire list cards from rebuilding when unrelated properties change.
-*   **Render Performance (RepaintBoundary):** Isolates complex visual layers (like custom loading shimmers and sliders) into independent layers to minimize GPU paint costs.
-*   **Media Caching & Sizing:** Optimizes image memory footprints by specifying cache size constraints, avoiding device memory bloat from large source URLs.
-*   **Keep-Screen-On (Wake Lock):** Integration options to prevent display timeouts while users are executing guided step instructions.
-*   **Staggered Entrance Animations:** Implements clean, staggered item fades and slide-ins to make transitions feel organic.
+*   **Media Upload & Storage:** Interacts directly with Supabase Storage buckets for uploading assets, handling public link resolution, and storage cleanup.
 *   **Robust CSV Importer:** Built a custom RFC-4180 state-machine parser to process nested newlines and commas within spreadsheet cells without alignment shifting.
+*   **Step Form Wizard:** Implemented inline list item modification widgets with stateful controllers to add, edit, and reorder steps and ingredients inside a unified multi-page form.
 
 ---
 
@@ -102,7 +89,8 @@ lib/
 │   └── services/               # Common abstractions (dialogs, snackbars, permissions)
 ├── modules/                    # Isolated feature domains
 │   ├── authentication/         # Sign-in workflows and admin user session blocks
-│   ├── dashboard/              # Metrics overview, recent updates, and user insights
+│   ├── categories/             # Curated meal category grids and split aspect-ratio cards
+│   ├── dashboard/              # Metrics overview, FL Chart widgets, and user insights
 │   ├── media/                  # Media library asset manager and image copy/delete
 │   └── recipes/                # Recipe lists, details, CSV parser, and wizard builder
 │       ├── data/               # Models, repositories, and remote Supabase datasources
